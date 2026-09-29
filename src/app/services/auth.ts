@@ -1,21 +1,23 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // Ajusta esta URL si el servidor de tu compañero usa otro puerto (ej. http://localhost:3000)
-  private API_URL = 'http://localhost:3000/api'; 
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
   registrar(datosUsuario: any): Observable<any> {
-    return this.http.post(`${this.API_URL}/registro`, datosUsuario);
+    // Simulación local de registro exitoso (sin peticiones HTTP)
+    return of({ status: 200, mensaje: 'Usuario registrado exitosamente' });
   }
 
   login(datosLogin: any): Observable<any> {
-    return this.http.post(`${this.API_URL}/login`, datosLogin);
+    // Simulación local de login exitoso con token falso
+    return of({ 
+      token: 'fake-jwt-token-local-12345',
+      correo: datosLogin.correo 
+    });
   }
 }
