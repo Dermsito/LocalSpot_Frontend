@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
@@ -16,21 +16,15 @@ export class LoginComponent {
     password: ''
   };
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private router: Router) {}
 
   onLogin() {
-    this.authService.login(this.loginData).subscribe({
-      next: (res: any) => {
-        console.log('Inicio de sesión exitoso:', res);
-        if (res.token) {
-          localStorage.setItem('token', res.token);
-        }
-        alert('Bienvenido');
-      },
-      error: (err: any) => {
-        console.error('Error en el login:', err);
-        alert('Credenciales incorrectas o error en el servidor');
-      }
-    });
+    if (!this.loginData.correo || !this.loginData.password) {
+      alert('Por favor, ingresa tu correo y contraseña');
+      return;
+    }
+
+    // Redirige a la pantalla de preferencias
+    this.router.navigate(['/preferencias']);
   }
 }

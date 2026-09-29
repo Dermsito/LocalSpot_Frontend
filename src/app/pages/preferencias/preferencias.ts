@@ -1,6 +1,13 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+
+interface Categoria {
+  id: string;
+  nombre: string;
+  icono: string;
+  seleccionada: boolean;
+}
 
 @Component({
   selector: 'app-preferencias',
@@ -10,8 +17,8 @@ import { CommonModule } from '@angular/common';
   styleUrl: './preferencias.css'
 })
 export class PreferenciasComponent {
-  // Lista de categorías que el usuario puede seleccionar
-  categorias = [
+
+  categorias: Categoria[] = [
     { id: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️', seleccionada: false },
     { id: 'cafes', nombre: 'Cafeterías & Postres', icono: '☕', seleccionada: false },
     { id: 'bares', nombre: 'Bares & Vida Nocturna', icono: '🍸', seleccionada: false },
@@ -22,21 +29,16 @@ export class PreferenciasComponent {
 
   constructor(private router: Router) {}
 
-  // Cambiar estado de selección al hacer clic
-  toggleCategoria(cat: any) {
+  toggleCategoria(cat: Categoria) {
     cat.seleccionada = !cat.seleccionada;
   }
 
-  // Guardar preferencias elegidas
-  guardarPreferencias() {
-    const seleccionadas = this.categorias
+  guardarYContinuar() {
+    const elegidas = this.categorias
       .filter(c => c.seleccionada)
       .map(c => c.id);
 
-    console.log('Preferencias seleccionadas:', seleccionadas);
-    alert('¡Preferencias guardadas con éxito!');
-    
-    // Aquí redirigiremos al buscador de lugares (RF4)
-    // this.router.navigate(['/lugares']);
+    localStorage.setItem('preferencias_usuario', JSON.stringify(elegidas));
+    this.router.navigate(['/lugares']);
   }
 }

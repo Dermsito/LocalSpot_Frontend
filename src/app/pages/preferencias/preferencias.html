@@ -1,20 +1,20 @@
-<div class="preferencias-container">
-  <div class="preferencias-card">
-    <h1>¿Qué te interesa encontrar?</h1>
+<div class="pantalla-wrapper">
+  <div class="card-preferencias">
+    <h2>¿Qué te interesa encontrar?</h2>
     <p class="subtitulo">Selecciona al menos una categoría para personalizar tus búsquedas</p>
 
     <div class="grid-categorias">
       <div 
         *ngFor="let cat of categorias" 
-        class="categoria-item"
-        [class.activa]="cat.seleccionada"
+        class="card-categoria" 
+        [class.selected]="cat.seleccionada"
         (click)="toggleCategoria(cat)">
         <span class="icono">{{ cat.icono }}</span>
-        <span class="nombre">{{ cat.nombre }}</span>
+        <p class="nombre-cat">{{ cat.nombre }}</p>
       </div>
     </div>
 
-    <button class="btn-guardar" (click)="guardarPreferencias()">
+    <button class="btn-guardar" (click)="guardarYContinuar()">
       Guardar y Continuar
     </button>
   </div>

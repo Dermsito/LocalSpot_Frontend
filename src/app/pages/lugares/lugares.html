@@ -1,0 +1,49 @@
+<div class="pantalla-wrapper">
+  <div class="contenedor-lugares">
+    
+    <header class="header-lugares">
+      <h1>Explorar Lugares</h1>
+      <p class="subtitulo">Encuentra los mejores sitios según tus preferencias</p>
+    </header>
+
+    <div class="controles-busqueda">
+      <input 
+        type="text" 
+        [(ngModel)]="textoBusqueda" 
+        (input)="filtrar()" 
+        placeholder="Buscar lugar por nombre..." 
+        class="input-busqueda"
+      />
+
+      <select [(ngModel)]="categoriaFiltro" (change)="filtrar()" class="select-categoria">
+        <option value="todas">Todas las categorías</option>
+        <option value="restaurantes">Restaurantes</option>
+        <option value="cafes">Cafeterías & Postres</option>
+        <option value="bares">Bares & Vida Nocturna</option>
+        <option value="entretenimiento">Entretenimiento</option>
+        <option value="deportes">Deportes & Fitness</option>
+        <option value="compras">Tiendas & Compras</option>
+      </select>
+    </div>
+
+    <div class="grid-lugares" *ngIf="lugaresFiltrados.length > 0; else sinResultados">
+      <div class="card-lugar" *ngFor="let lugar of lugaresFiltrados">
+        <div class="icono-lugar">{{ lugar.icono }}</div>
+        <div class="info-lugar">
+          <h3>{{ lugar.nombre }}</h3>
+          <p class="direccion">📍 {{ lugar.direccion }}</p>
+          <div class="calificacion">
+            <span>⭐ {{ lugar.calificacion }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #sinResultados>
+      <div class="sin-resultados">
+        <p>No se encontraron lugares que coincidan con tu búsqueda.</p>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
