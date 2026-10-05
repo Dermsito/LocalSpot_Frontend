@@ -1,23 +1,21 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  // Se obtiene dinámicamente la URL base desde las variables de entorno
+  private apiUrl = `${environment.apiUrl}/auth`;
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  registrar(datosUsuario: any): Observable<any> {
-    // Simulación local de registro exitoso (sin peticiones HTTP)
-    return of({ status: 200, mensaje: 'Usuario registrado exitosamente' });
+  login(credenciales: any) {
+    return this.http.post(`${this.apiUrl}/login`, credenciales);
   }
 
-  login(datosLogin: any): Observable<any> {
-    // Simulación local de login exitoso con token falso
-    return of({ 
-      token: 'fake-jwt-token-local-12345',
-      correo: datosLogin.correo 
-    });
+  registrar(usuario: any) {
+    return this.http.post(`${this.apiUrl}/registro`, usuario);
   }
 }
