@@ -1,0 +1,211 @@
+<div class="detalle-wrapper">
+  <!-- Botón Volver -->
+  <a routerLink="/lugares" class="btn-back">
+    <span>←</span> Volver a Explorar
+  </a>
+
+  <!-- Tarjeta Principal Hero -->
+  <div class="hero-card">
+    <div class="hero-header">
+      <div class="avatar-box">
+        <span class="lugar-emoji">{{ lugar.icono }}</span>
+      </div>
+      <div class="hero-details">
+        <div class="top-row">
+          <span class="category-chip">{{ nombreCategoria(lugar.categoria) }}</span>
+          <div class="rating-badge">
+            ⭐ <span>{{ lugar.calificacionPromedio }}</span> / 5.0
+          </div>
+          <div class="price-badge" [title]="etiquetaPrecio(lugar.rangoPrecio)">
+            {{ simbolosPrecio(lugar.rangoPrecio) }} · {{ etiquetaPrecio(lugar.rangoPrecio) }}
+          </div>
+        </div>
+        <h1 class="lugar-title">{{ lugar.nombre }}</h1>
+        <p class="info-row">📍 <span>{{ lugar.direccion }}</span></p>
+        <p class="info-row">🕒 <span>{{ lugar.horario || 'Horario no especificado' }}</span></p>
+      </div>
+      <button class="favorite-btn" [class.is-favorite]="lugar.esFavorito" (click)="toggleFavorito()">
+        <span class="heart-icon">{{ lugar.esFavorito ? '❤️' : '🤍' }}</span>
+        <span>{{ lugar.esFavorito ? 'En Favoritos' : 'Guardar' }}</span>
+      </button>
+    </div>
+
+    <!-- Tags/Etiquetas del lugar -->
+    <div class="tags-container">
+      <span class="tag" *ngFor="let tag of lugar.etiquetas">✨ {{ tag }}</span>
+    </div>
+  </div>
+
+  <!-- Galería de fotos / Carrusel -->
+  <div class="content-card gallery-card">
+    <h2 class="section-title">Galería de fotos</h2>
+    <div class="carousel">
+      <img
+        class="carousel-img"
+        [src]="lugar.fotos[indiceFoto]"
+        [alt]="'Foto de ' + lugar.nombre"
+        loading="lazy"
+      />
+
+      <button class="carousel-btn prev" type="button" (click)="anteriorFoto()" aria-label="Foto anterior">‹</button>
+      <button class="carousel-btn next" type="button" (click)="siguienteFoto()" aria-label="Foto siguiente">›</button>
+
+      <span class="carousel-counter">{{ indiceFoto + 1 }} / {{ lugar.fotos.length }}</span>
+
+      <div class="carousel-dots">
+        <button
+          type="button"
+          class="dot"
+          *ngFor="let foto of lugar.fotos; let i = index"
+          [class.active]="i === indiceFoto"
+          (click)="irAFoto(i)"
+          [attr.aria-label]="'Ver foto ' + (i + 1)"
+        ></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido en dos columnas -->
+  <div class="grid-content">
+    <!-- Columna Izquierda: Descripción -->
+    <div class="content-card">
+      <h2 class="section-title">Sobre este lugar</h2>
+      <p class="description-text">{{ lugar.descripcion }}</p>
+
+      <div class="action-banner">
+        <h3>¿Ya visitaste este lugar?</h3>
+        <p>Comparte tu experiencia con la comunidad de LocalSpot.</p>
+        <button class="btn-primary-action" (click)="toggleFormularioResena()">
+          {{ mostrarFormularioResena ? 'Cancelar reseña' : 'Escribir una reseña' }}
+        </button>
+
+        <!-- Formulario de Reseña Inline -->
+        <div class="review-form-box" *ngIf="mostrarFormularioResena">
+          <div class="rating-selector">
+            <span>Tu calificación:</span>
+            <div class="stars-input">
+              <button type="button" *ngFor="let s of [1,2,3,4,5]" 
+                      (click)="nuevaResena.estrellas = s"
+                      [class.active]="nuevaResena.estrellas >= s">
+                ⭐
+              </button>
+            </div>
+          </div>
+          <textarea [(ngModel)]="nuevaResena.comentario" 
+                    placeholder="Cuéntanos qué te pareció el lugar, la atención, la comida..."
+                    rows="3"></textarea>
+          <button class="btn-submit-review" (click)="enviarResena()">
+            Publicar mi experiencia
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna Derecha: Información útil -->
+    <div class="content-card">
+      <h2 class="section-title">Información útil</h2>
+
+      <!-- Canales de contacto -->
+      <div class="info-block">
+        <h3 class="info-title">📞 Contacto</h3>
+        <div class="contact-actions" *ngIf="lugar.telefono || lugar.whatsapp || lugar.instagram || lugar.web; else sinContacto">
+          <a class="contact-btn" *ngIf="lugar.telefono" [href]="'tel:' + lugar.telefono">
+            <span>📱</span> {{ lugar.telefono }}
+          </a>
+          <a class="contact-btn whatsapp" *ngIf="lugar.whatsapp" [href]="'https://wa.me/' + lugar.whatsapp" target="_blank" rel="noopener">
+            <span>💬</span> WhatsApp
+          </a>
+          <a class="contact-btn" *ngIf="lugar.instagram" [href]="'https://instagram.com/' + lugar.instagram" target="_blank" rel="noopener">
+            <span>📷</span> @{{ lugar.instagram }}
+          </a>
+          <a class="contact-btn" *ngIf="lugar.web" [href]="lugar.web" target="_blank" rel="noopener">
+            <span>🌐</span> Sitio web
+          </a>
+        </div>
+        <ng-template #sinContacto>
+          <p class="info-empty">Este establecimiento aún no ha registrado información de contacto.</p>
+        </ng-template>
+      </div>
+
+      <!-- Horario de atención -->
+      <div class="info-block">
+        <h3 class="info-title">🕒 Horario de atención</h3>
+        <ul class="schedule-list" *ngIf="lugar.horarios.length; else sinHorario">
+          <li *ngFor="let h of lugar.horarios" [class.closed]="!h.abierto">
+            <span class="sched-day">{{ h.dia }}</span>
+            <span class="sched-hours">{{ h.abierto ? (h.apertura + ' - ' + h.cierre) : 'Cerrado' }}</span>
+          </li>
+        </ul>
+        <ng-template #sinHorario>
+          <p class="info-empty">{{ lugar.horario || 'Horario no especificado' }}</p>
+        </ng-template>
+      </div>
+
+      <!-- Métodos de pago -->
+      <div class="info-block">
+        <h3 class="info-title">💳 Métodos de pago</h3>
+        <div class="chip-list" *ngIf="lugar.pagos.length; else sinPagos">
+          <span class="chip" *ngFor="let pago of lugar.pagos">
+            <span>{{ pago.icono }}</span> {{ pago.nombre }}
+          </span>
+        </div>
+        <ng-template #sinPagos>
+          <p class="info-empty">No especificado por el establecimiento.</p>
+        </ng-template>
+      </div>
+
+      <!-- Servicios y comodidades -->
+      <div class="info-block">
+        <h3 class="info-title">✨ Servicios y comodidades</h3>
+        <ul class="service-list" *ngIf="lugar.comodidades.length; else sinComodidades">
+          <li *ngFor="let comodidad of lugar.comodidades">
+            <span class="check">✓</span>
+            <span>{{ comodidad.icono }}</span>
+            <span>{{ comodidad.nombre }}</span>
+          </li>
+        </ul>
+        <ng-template #sinComodidades>
+          <p class="info-empty">No especificado por el establecimiento.</p>
+        </ng-template>
+      </div>
+
+      <!-- Rango de precios -->
+      <div class="info-block">
+        <h3 class="info-title">💲 Rango de precios</h3>
+        <div class="price-range">
+          <span class="price-symbols">{{ simbolosPrecio(lugar.rangoPrecio) }}</span>
+          <span class="price-tag">{{ etiquetaPrecio(lugar.rangoPrecio) }}</span>
+        </div>
+        <p class="price-hint">Precio promedio por persona</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reseñas -->
+  <div class="content-card reviews-card">
+    <h2 class="section-title">Reseñas y Opiniones ({{ lugar.calificaciones.length }})</h2>
+    
+    <div class="reviews-list" *ngIf="lugar.calificaciones.length > 0; else sinResenas">
+      <div class="review-card" *ngFor="let c of lugar.calificaciones">
+        <div class="review-header">
+          <span class="review-user">👤 {{ c.usuario }}</span>
+          <span class="review-stars">
+            <span *ngFor="let s of [1,2,3,4,5]">
+              {{ s <= c.estrellas ? '⭐' : '☆' }}
+            </span>
+          </span>
+        </div>
+        <span class="review-date">{{ c.fecha }}</span>
+        <p class="review-comment">"{{ c.comentario }}"</p>
+      </div>
+    </div>
+
+    <ng-template #sinResenas>
+      <div class="empty-reviews">
+        <span class="empty-icon">✍️</span>
+        <p>Aún no hay reseñas para este lugar.</p>
+        <p class="small">¡Sé el primero en compartir tu experiencia!</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

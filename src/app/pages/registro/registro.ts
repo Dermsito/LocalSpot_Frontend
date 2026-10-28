@@ -1,45 +1,28 @@
 import { Component } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-registro',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './registro.html',
-  styleUrl: './registro.css'
+  styleUrls: ['./registro.css']
 })
 export class RegistroComponent {
-  usuario = {
+  nuevoUsuario = {
     nombre: '',
     correo: '',
-    password: '',
-    confirmarPassword: ''
+    password: ''
   };
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private router: Router) {}
 
-  onRegistro(event?: Event) {
-    if (event) {
-      event.preventDefault();
-    }
-
-    if (this.usuario.password !== this.usuario.confirmarPassword) {
-      alert('Las contraseñas no coinciden');
-      return;
-    }
-
-    this.authService.registrar(this.usuario).subscribe({
-      next: (res: any) => {
-        console.log('Usuario registrado con éxito:', res);
-        alert('Registro exitoso');
-        this.router.navigate(['/login']);
-      },
-      error: (err: any) => {
-        console.error('Error al registrar usuario:', err);
-        alert('Error en el registro');
-      }
-    });
+  onRegistro(): void {
+    console.log('Usuario registrado exitosamente:', this.nuevoUsuario);
+    
+    // 👇 Redirige a la pantalla de Iniciar Sesión en lugar de ir directo a explorar
+    this.router.navigate(['/login']);
   }
 }

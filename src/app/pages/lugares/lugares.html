@@ -1,49 +1,111 @@
-<div class="pantalla-wrapper">
-  <div class="contenedor-lugares">
-    
-    <header class="header-lugares">
-      <h1>Explorar Lugares</h1>
-      <p class="subtitulo">Encuentra los mejores sitios según tus preferencias</p>
-    </header>
+<div class="landing">
 
-    <div class="controles-busqueda">
-      <input 
-        type="text" 
-        [(ngModel)]="textoBusqueda" 
-        (input)="filtrar()" 
-        placeholder="Buscar lugar por nombre..." 
-        class="input-busqueda"
-      />
+  <!-- Navbar -->
+  <header class="navbar">
+    <a routerLink="/lugares" class="logo">
+      <span class="logo-mark">L</span>
+      <span class="logo-text">LOCALSPOT</span>
+    </a>
+    <nav class="nav-links">
+      <a routerLink="/lugares" class="active">Explorar</a>
+      <a (click)="irACategorias($event)">Categorías</a>
+    </nav>
+    <div class="nav-actions">
+      <!-- Botón de Cerrar sesión en lugar de Login/Registro -->
+      <a routerLink="/login" class="btn-ghost">Cerrar sesión</a>
+    </div>
+  </header>
 
-      <select [(ngModel)]="categoriaFiltro" (change)="filtrar()" class="select-categoria">
-        <option value="todas">Todas las categorías</option>
-        <option value="restaurantes">Restaurantes</option>
-        <option value="cafes">Cafeterías & Postres</option>
-        <option value="bares">Bares & Vida Nocturna</option>
-        <option value="entretenimiento">Entretenimiento</option>
-        <option value="deportes">Deportes & Fitness</option>
-        <option value="compras">Tiendas & Compras</option>
-      </select>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Descubre los mejores negocios y lugares locales</h1>
+      <p class="hero-sub">
+        Explora {{ lugares.length }}+ lugares verificados y recomendados por la comunidad, todo en un solo lugar.
+      </p>
+
+      <form class="search" (ngSubmit)="buscar()">
+        <div class="search-field">
+          <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" name="q" [(ngModel)]="textoBusqueda" (input)="filtrar()"
+                 placeholder="¿Qué lugar estás buscando?" />
+        </div>
+        <div class="search-select">
+          <select name="cat" [(ngModel)]="categoriaFiltro" (change)="filtrar()">
+            <option value="todas">Todas las categorías</option>
+            <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-search">
+          <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Buscar
+        </button>
+      </form>
+
+      <div class="stats">
+        <div class="stat"><strong>{{ lugares.length }}+</strong><span>Lugares</span></div>
+        <div class="stat"><strong>{{ categorias.length }}</strong><span>Categorías</span></div>
+        <div class="stat"><strong>100%</strong><span>Verificados</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorías -->
+  <section class="section" id="categorias">
+    <div class="section-head">
+      <div>
+        <h2>Explorar por categoría</h2>
+        <p>Encuentra lo que necesitas, organizado.</p>
+      </div>
+      <button class="link" (click)="seleccionarCategoria('todas')">Ver todo →</button>
+    </div>
+    <div class="cat-grid">
+      <button *ngFor="let c of categorias" class="cat-card"
+              [class.selected]="categoriaFiltro === c.valor"
+              (click)="seleccionarCategoria(c.valor)">
+        <span class="cat-icon">{{ c.icono }}</span>
+        <span>{{ c.nombre }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Lugares -->
+  <section class="section" id="lugares">
+    <div class="section-head">
+      <div>
+        <h2>Lugares disponibles</h2>
+        <p>{{ lugaresFiltrados.length }} resultado(s) · Selecciona una tarjeta para ver el detalle.</p>
+      </div>
     </div>
 
-    <div class="grid-lugares" *ngIf="lugaresFiltrados.length > 0; else sinResultados">
-      <div class="card-lugar" *ngFor="let lugar of lugaresFiltrados">
-        <div class="icono-lugar">{{ lugar.icono }}</div>
-        <div class="info-lugar">
-          <h3>{{ lugar.nombre }}</h3>
-          <p class="direccion">📍 {{ lugar.direccion }}</p>
-          <div class="calificacion">
-            <span>⭐ {{ lugar.calificacion }}</span>
-          </div>
+    <div class="grid" *ngIf="lugaresFiltrados.length > 0; else sinResultados">
+      <a class="card" *ngFor="let lugar of lugaresFiltrados" [routerLink]="['/lugar', lugar.id]">
+        <div class="card-top">
+          <div class="card-icon">{{ lugar.icono }}</div>
+          <span class="badge">{{ nombreCategoria(lugar.categoria) }}</span>
         </div>
-      </div>
+        <h3>{{ lugar.nombre }}</h3>
+        <p class="address">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          {{ lugar.direccion }}
+        </p>
+        <div class="card-foot">
+          <div class="stars">
+            <span *ngFor="let llena of estrellas(lugar.calificacion)" [class.on]="llena">★</span>
+            <b>{{ lugar.calificacion }}</b>
+          </div>
+          <span class="ver">Ver detalle →</span>
+        </div>
+      </a>
     </div>
 
     <ng-template #sinResultados>
-      <div class="sin-resultados">
+      <div class="empty">
+        <span>🔎</span>
         <p>No se encontraron lugares que coincidan con tu búsqueda.</p>
       </div>
     </ng-template>
+  </section>
 
-  </div>
+  <footer class="footer">© LocalSpot · Descubre tu ciudad</footer>
 </div>
