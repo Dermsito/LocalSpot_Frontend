@@ -1,0 +1,102 @@
+<div class="admin-wrapper">
+  <div class="admin-card">
+    <div class="admin-header">
+      <div class="admin-badge">🏪</div>
+      <span class="admin-tag">Nuevo administrador</span>
+      <h1>Registra tu negocio</h1>
+      <p>Crea la cuenta de administrador para gestionar tu establecimiento.</p>
+    </div>
+
+    <form (ngSubmit)="onRegistroAdmin()" class="admin-form">
+      <div class="form-group">
+        <label for="nombreResponsable">Nombre del responsable</label>
+        <input
+          type="text"
+          id="nombreResponsable"
+          [(ngModel)]="nuevoAdmin.nombreResponsable"
+          name="nombreResponsable"
+          placeholder="Ej: María Gómez"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="nombreNegocio">Nombre del negocio</label>
+        <input
+          type="text"
+          id="nombreNegocio"
+          [(ngModel)]="nuevoAdmin.nombreNegocio"
+          name="nombreNegocio"
+          placeholder="Ej: Café Central"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="categoria">Categoría del negocio</label>
+        <select id="categoria" [(ngModel)]="nuevoAdmin.categoria" name="categoria" required>
+          <option value="">Selecciona una categoría</option>
+          <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="correo">Correo</label>
+          <input
+            type="email"
+            id="correo"
+            [(ngModel)]="nuevoAdmin.correo"
+            name="correo"
+            placeholder="admin@tunegocio.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="telefono">Teléfono</label>
+          <input
+            type="tel"
+            id="telefono"
+            [(ngModel)]="nuevoAdmin.telefono"
+            name="telefono"
+            placeholder="+57 300 000 0000"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input
+          type="password"
+          id="password"
+          [(ngModel)]="nuevoAdmin.password"
+          name="password"
+          placeholder="Mínimo 8 caracteres"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="codigoAdmin">Código de administrador</label>
+        <input
+          type="text"
+          id="codigoAdmin"
+          [(ngModel)]="nuevoAdmin.codigoAdmin"
+          name="codigoAdmin"
+          placeholder="Código entregado por LocalSpot"
+          required
+        />
+        <small>Necesario para validar que puedes administrar este establecimiento.</small>
+      </div>
+
+      <button type="submit" class="btn-admin">Crear cuenta de administrador</button>
+    </form>
+
+    <div class="admin-footer">
+      <p>¿Ya tienes cuenta de administrador? <a routerLink="/admin/login">Inicia sesión</a></p>
+      <p class="client-link"><a routerLink="/registro">← Registrarme como cliente</a></p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,163 @@
+<div class="panel-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-emoji">🛡️</div>
+      <h2>LocalSpot</h2>
+      <span class="user-role">Panel Administrador</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a (click)="cancelarEdicion()" class="nav-item" [class.active]="!editando">
+        <span class="icon">🗂️</span> Todos los negocios
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <p class="user-name">{{ usuario?.nombre }}</p>
+        <p class="user-email">{{ usuario?.correo }}</p>
+      </div>
+      <button (click)="logout()" class="btn-logout" routerLink="/login">Cerrar Sesión</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="content-header">
+      <h1>Hola, {{ usuario?.nombre }}</h1>
+      <p *ngIf="!editando">Supervisa, busca y administra todos los establecimientos de LocalSpot.</p>
+      <p *ngIf="editando">Editando "{{ negocioEnEdicion.nombre }}".</p>
+    </header>
+
+    <!-- Resumen -->
+    <div class="stats-grid" *ngIf="!editando">
+      <div class="stat-card">
+        <span class="stat-icon">🏪</span>
+        <div>
+          <p class="stat-value">{{ negocios.length }}</p>
+          <p class="stat-label">Establecimientos</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <div>
+          <p class="stat-value">{{ totalPublicados }}</p>
+          <p class="stat-label">Publicados</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📝</span>
+        <div>
+          <p class="stat-value">{{ totalBorradores }}</p>
+          <p class="stat-label">Borradores</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listado y filtros -->
+    <div class="list-view" *ngIf="!editando">
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" [(ngModel)]="busqueda" name="busqueda"
+                 placeholder="Buscar por nombre o dirección…">
+        </div>
+        <select [(ngModel)]="filtroCategoria" name="filtroCategoria" class="filter-select">
+          <option value="todas">Todas las categorías</option>
+          <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+        </select>
+        <select [(ngModel)]="filtroEstado" name="filtroEstado" class="filter-select">
+          <option value="todos">Todos los estados</option>
+          <option value="publicados">Publicados</option>
+          <option value="borradores">Borradores</option>
+        </select>
+        <button type="button" class="btn-clear" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+
+      <div class="business-grid" *ngIf="negociosFiltrados.length > 0; else sinResultados">
+        <div class="info-card" *ngFor="let negocio of negociosFiltrados">
+          <div class="card-header">
+            <div class="title-with-icon">
+              <span class="business-icon">{{ negocio.icono }}</span>
+              <h3>{{ negocio.nombre }}</h3>
+            </div>
+            <span class="status-badge" [class.published]="negocio.publicado">
+              {{ negocio.publicado ? 'Publicado' : 'Borrador' }}
+            </span>
+          </div>
+
+          <div class="negocio-preview">
+            <div class="preview-banner"
+                 [style.backgroundImage]="'url(' + (negocio.fotos[0] || 'https://via.placeholder.com/400x150?text=Sin+Foto') + ')'"></div>
+            <div class="preview-details">
+              <p><strong>Categoría:</strong> {{ getNombreCategoria(negocio.categoria) }}</p>
+              <p><strong>Dirección:</strong> {{ negocio.direccion || 'Sin dirección' }}</p>
+              <p><strong>Propietario ID:</strong> {{ negocio.propietarioId }}</p>
+              <p class="description-preview">{{ negocio.descripcion || 'Sin descripción' }}</p>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button (click)="iniciarEdicion(negocio)" class="btn-edit">Editar</button>
+            <button (click)="togglePublicacion(negocio)"
+                    [class.btn-publish]="!negocio.publicado"
+                    [class.btn-unpublish]="negocio.publicado">
+              {{ negocio.publicado ? 'Despublicar' : 'Publicar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #sinResultados>
+        <div class="empty-state">
+          <div class="empty-icon">🔎</div>
+          <h3>No se encontraron establecimientos</h3>
+          <p>Ajusta la búsqueda o los filtros para ver más resultados.</p>
+          <button class="btn-primary" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Formulario de edición -->
+    <div class="edit-container" *ngIf="editando">
+      <form (ngSubmit)="guardarCambios()" class="edit-form">
+        <div class="form-section">
+          <h3>Información del establecimiento</h3>
+          <div class="form-group">
+            <label>Nombre del establecimiento</label>
+            <input type="text" [(ngModel)]="negocioEnEdicion.nombre" name="nombre" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Categoría</label>
+              <select [(ngModel)]="negocioEnEdicion.categoria" name="categoria" required>
+                <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="text" [(ngModel)]="negocioEnEdicion.telefono" name="telefono" placeholder="Ej: 6012345678">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="negocioEnEdicion.direccion" name="direccion">
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="negocioEnEdicion.descripcion" name="descripcion" rows="4"></textarea>
+          </div>
+        </div>
+
+        <p class="edit-note">
+          Las fotografías, horarios, métodos de pago y comodidades se administran desde el
+          panel del propietario. Aquí puedes supervisar y moderar la información pública.
+        </p>
+
+        <div class="edit-actions-footer">
+          <button type="button" (click)="cancelarEdicion()" class="btn-cancel">Descartar cambios</button>
+          <button type="submit" class="btn-save">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>

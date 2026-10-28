@@ -1,0 +1,205 @@
+<div class="panel-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-emoji">🏢</div>
+      <h2>LocalSpot</h2>
+      <span class="user-role">Panel Propietario</span>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a (click)="cancelarEdicion()" class="nav-item" [class.active]="!editando">
+        <span class="icon">📊</span> Resumen
+      </a>
+      <a (click)="misNegocios.length > 0 && iniciarEdicion(misNegocios[0])" class="nav-item" [class.active]="editando" [class.disabled]="misNegocios.length === 0">
+        <span class="icon">🏬</span> Personalizar mi sitio
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <p class="user-name">{{ usuario?.nombre }}</p>
+        <p class="user-email">{{ usuario?.correo }}</p>
+      </div>
+      <button (click)="logout()" class="btn-logout" routerLink="/login">Cerrar Sesión</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="content-header">
+      <h1>Hola, {{ usuario?.nombre }}</h1>
+      <p *ngIf="!editando">Gestiona la visibilidad y el diseño de tu negocio.</p>
+      <p *ngIf="editando">Personaliza cada detalle para atraer más clientes.</p>
+    </header>
+
+    <!-- Vista de Resumen -->
+    <div class="dashboard-grid" *ngIf="!editando">
+      <div class="info-card" *ngFor="let negocio of misNegocios">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <span class="business-icon">{{ negocio.icono }}</span>
+            <h3>{{ negocio.nombre }}</h3>
+          </div>
+          <span class="status-badge" [class.published]="negocio.publicado">
+            {{ negocio.publicado ? 'Publicado' : 'Borrador' }}
+          </span>
+        </div>
+        
+        <div class="negocio-preview">
+          <div class="preview-banner" [style.backgroundImage]="'url(' + (negocio.fotos[0] || 'https://via.placeholder.com/400x150?text=Sin+Foto') + ')'"></div>
+          <div class="preview-details">
+            <p><strong>Categoría:</strong> {{ getNombreCategoria(negocio.categoria) }}</p>
+            <p><strong>Dirección:</strong> {{ negocio.direccion }}</p>
+            <p class="description-preview">{{ negocio.descripcion || 'Sin descripción' }}</p>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button (click)="iniciarEdicion(negocio)" class="btn-edit">Personalizar información</button>
+          <button (click)="togglePublicacion(negocio)" [class.btn-publish]="!negocio.publicado" [class.btn-unpublish]="negocio.publicado">
+            {{ negocio.publicado ? 'Quitar de catálogos' : 'Publicar ahora' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="misNegocios.length === 0">
+        <div class="empty-icon">🏪</div>
+        <h3>Aún no has registrado ningún negocio</h3>
+        <p>Crea tu establecimiento, personalízalo con fotos, horarios y toda tu información, y publícalo para que tus clientes lo encuentren.</p>
+        <button routerLink="/propietario/registro" class="btn-primary">
+          <span class="btn-plus">＋</span> Registrar mi primer negocio
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulario de Personalización Completa -->
+    <div class="edit-container" *ngIf="editando">
+      <form (ngSubmit)="guardarCambios()" class="edit-form">
+        <div class="form-section">
+          <h3>Información Básica</h3>
+          <div class="form-group">
+            <label>Nombre del establecimiento</label>
+            <input type="text" [(ngModel)]="negocioEnEdicion.nombre" name="nombre" required placeholder="Nombre comercial">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Categoría</label>
+              <select [(ngModel)]="negocioEnEdicion.categoria" name="categoria" required>
+                <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Rango de precios</label>
+              <select [(ngModel)]="negocioEnEdicion.rangoPrecio" name="rangoPrecio">
+                <option [ngValue]="1">Económico ($)</option>
+                <option [ngValue]="2">Moderado ($$)</option>
+                <option [ngValue]="3">Premium ($$$)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Descripción detallada</label>
+            <textarea [(ngModel)]="negocioEnEdicion.descripcion" name="descripcion" rows="4" placeholder="Describe qué hace único a tu negocio..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Ubicación</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dirección física</label>
+              <input type="text" [(ngModel)]="negocioEnEdicion.direccion" name="direccion" required placeholder="Calle, Carrera, Barrio">
+            </div>
+            <div class="form-group">
+              <label>Teléfono fijo</label>
+              <input type="text" [(ngModel)]="negocioEnEdicion.telefono" name="telefono" placeholder="Ej: 6012345678">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Horarios de atención</h3>
+          <p class="section-hint">Activa los días que abres y ajusta la hora de apertura y cierre.</p>
+          <div class="schedule-editor">
+            <div class="schedule-row" *ngFor="let h of negocioEnEdicion.horarios; let i = index">
+              <span class="schedule-day">{{ h.dia }}</span>
+              <label class="switch">
+                <input type="checkbox" [(ngModel)]="h.abierto" [name]="'abierto' + i">
+                <span class="switch-track"></span>
+              </label>
+              <span class="schedule-status" [class.open]="h.abierto">{{ h.abierto ? 'Abierto' : 'Cerrado' }}</span>
+              <div class="schedule-times" [class.disabled]="!h.abierto">
+                <input type="time" [(ngModel)]="h.apertura" [name]="'apertura' + i" [disabled]="!h.abierto">
+                <span class="time-sep">a</span>
+                <input type="time" [(ngModel)]="h.cierre" [name]="'cierre' + i" [disabled]="!h.abierto">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Métodos de pago</h3>
+          <p class="section-hint">Selecciona las formas de pago que aceptas.</p>
+          <div class="chip-selector">
+            <button type="button" *ngFor="let m of metodosPago"
+                    class="select-chip" [class.active]="tienePago(m.nombre)"
+                    (click)="togglePago(m.nombre)">
+              <span class="chip-icon">{{ m.icono }}</span> {{ m.nombre }}
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Servicios y comodidades</h3>
+          <p class="section-hint">Destaca lo que ofrece tu establecimiento.</p>
+          <div class="chip-selector">
+            <button type="button" *ngFor="let c of comodidadesDisponibles"
+                    class="select-chip" [class.active]="tieneComodidad(c.nombre)"
+                    (click)="toggleComodidad(c.nombre)">
+              <span class="chip-icon">{{ c.icono }}</span> {{ c.nombre }}
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Contacto y Redes Sociales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>WhatsApp</label>
+              <input type="text" [(ngModel)]="negocioEnEdicion.whatsapp" name="whatsapp" placeholder="Ej: 573001234567">
+            </div>
+            <div class="form-group">
+              <label>Instagram (usuario)</label>
+              <input type="text" [(ngModel)]="negocioEnEdicion.instagram" name="instagram" placeholder="Ej: mi_negocio">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Sitio Web</label>
+            <input type="url" [(ngModel)]="negocioEnEdicion.web" name="web" placeholder="https://www.ejemplo.com">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Galería de Fotos</h3>
+          <div class="photo-input-group">
+            <input type="text" [(ngModel)]="nuevaFotoUrl" name="nuevaFoto" placeholder="Pega aquí el link de una imagen (JPG/PNG)">
+            <button type="button" (click)="agregarFoto()" class="btn-add-photo">Agregar</button>
+          </div>
+          <div class="photos-grid">
+            <div class="photo-item" *ngFor="let foto of negocioEnEdicion.fotos; let i = index">
+              <img [src]="foto" alt="Vista previa">
+              <button type="button" (click)="eliminarFoto(i)" class="btn-remove-photo">×</button>
+            </div>
+            <div class="photo-placeholder" *ngIf="!negocioEnEdicion.fotos || negocioEnEdicion.fotos.length === 0">
+              Aún no has agregado fotos.
+            </div>
+          </div>
+        </div>
+
+        <div class="edit-actions-footer">
+          <button type="button" (click)="cancelarEdicion()" class="btn-cancel">Descartar cambios</button>
+          <button type="submit" class="btn-save">Guardar y actualizar sitio</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>

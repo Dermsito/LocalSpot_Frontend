@@ -1,0 +1,158 @@
+<div class="admin-wrapper">
+  <div class="admin-card">
+    <div class="admin-header">
+      <div class="admin-badge">🏪</div>
+      <span class="admin-tag">Nuevo propietario</span>
+      <h1>Registra tu negocio</h1>
+      <p>Crea tu cuenta y registra tu establecimiento en LocalSpot.</p>
+    </div>
+
+    <form (ngSubmit)="onRegistro()" class="admin-form">
+      <!-- Sección: Datos del Propietario -->
+      <h3 class="section-title">Datos de la cuenta</h3>
+      
+      <div class="form-group">
+        <label for="nombre">Nombre completo</label>
+        <input
+          type="text"
+          id="nombre"
+          [(ngModel)]="nuevoNegocio.nombre"
+          name="nombre"
+          placeholder="Ej: Juan Pérez"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="correo">Correo electrónico</label>
+          <input
+            type="email"
+            id="correo"
+            [(ngModel)]="nuevoNegocio.correo"
+            name="correo"
+            placeholder="propietario@correo.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="contrasena">Contraseña</label>
+          <input
+            type="password"
+            id="contrasena"
+            [(ngModel)]="nuevoNegocio.contrasena"
+            name="contrasena"
+            placeholder="Mínimo 8 caracteres"
+            required
+            minlength="8"
+          />
+        </div>
+      </div>
+
+      <!-- Sección: Datos del Negocio -->
+      <h3 class="section-title">Información del establecimiento</h3>
+
+      <div class="form-group">
+        <label for="nombreNegocio">Nombre del negocio</label>
+        <input
+          type="text"
+          id="nombreNegocio"
+          [(ngModel)]="nuevoNegocio.nombreNegocio"
+          name="nombreNegocio"
+          placeholder="Ej: Café Aroma de Montaña"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" [(ngModel)]="nuevoNegocio.categoria" name="categoria" required>
+            <option value="">Selecciona una categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="direccion">Dirección</label>
+          <input
+            type="text"
+            id="direccion"
+            [(ngModel)]="nuevoNegocio.direccion"
+            name="direccion"
+            placeholder="Calle 123 #45-67"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="telefono">Teléfono de contacto</label>
+        <input
+          type="text"
+          id="telefono"
+          [(ngModel)]="nuevoNegocio.telefono"
+          name="telefono"
+          placeholder="Ej: 6012345678"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Breve descripción</label>
+        <textarea
+          id="descripcion"
+          [(ngModel)]="nuevoNegocio.descripcion"
+          name="descripcion"
+          placeholder="Cuéntanos qué hace especial a tu negocio..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <h3 class="section-title">Horarios de atención</h3>
+      <p class="section-hint">Activa los días que atiendes y ajusta la hora de apertura y cierre.</p>
+      <div class="schedule-editor">
+        <div class="schedule-row" *ngFor="let h of horarios; let i = index">
+          <span class="schedule-day">{{ h.dia }}</span>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="h.abierto" [name]="'abierto' + i">
+            <span class="switch-track"></span>
+          </label>
+          <span class="schedule-status" [class.open]="h.abierto">{{ h.abierto ? 'Abierto' : 'Cerrado' }}</span>
+          <div class="schedule-times" [class.disabled]="!h.abierto">
+            <input type="time" [(ngModel)]="h.apertura" [name]="'apertura' + i" [disabled]="!h.abierto">
+            <span class="time-sep">a</span>
+            <input type="time" [(ngModel)]="h.cierre" [name]="'cierre' + i" [disabled]="!h.abierto">
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">Métodos de pago aceptados</h3>
+      <div class="chip-selector">
+        <button type="button" *ngFor="let m of metodosPago"
+                class="select-chip" [class.active]="tienePago(m.nombre)"
+                (click)="togglePago(m.nombre)">
+          <span class="chip-icon">{{ m.icono }}</span> {{ m.nombre }}
+        </button>
+      </div>
+
+      <h3 class="section-title">Servicios y comodidades</h3>
+      <div class="chip-selector">
+        <button type="button" *ngFor="let c of comodidadesDisponibles"
+                class="select-chip" [class.active]="tieneComodidad(c.nombre)"
+                (click)="toggleComodidad(c.nombre)">
+          <span class="chip-icon">{{ c.icono }}</span> {{ c.nombre }}
+        </button>
+      </div>
+
+      <button type="submit" class="btn-admin" [disabled]="cargando">
+        {{ cargando ? 'Registrando...' : 'Crear cuenta y negocio' }}
+      </button>
+    </form>
+
+    <div class="admin-footer">
+      <p>¿Ya tienes cuenta de propietario? <a routerLink="/propietario/login">Inicia sesión</a></p>
+      <p class="client-link"><a routerLink="/registro">← Registrarme como cliente</a></p>
+    </div>
+  </div>
+</div>

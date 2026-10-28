@@ -1,0 +1,356 @@
+.admin-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 55%, #2b6cb0 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  padding: 30px 20px;
+}
+
+.admin-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 720px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.45);
+  border-top: 5px solid #3182ce;
+}
+
+.admin-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.admin-badge {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+.admin-tag {
+  display: inline-block;
+  background: #ebf8ff;
+  color: #3182ce;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
+}
+
+.admin-header h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a202c;
+  margin: 0 0 6px 0;
+}
+
+.admin-header p {
+  color: #718096;
+  font-size: 14px;
+  margin: 0;
+}
+
+.backend-warning {
+  background: #fffaf0;
+  border: 1px solid #fbd38d;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  color: #9c4221;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 20px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 16px;
+  min-height: 48px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition: all 0.2s;
+  background: #fff;
+  font-family: inherit;
+}
+
+.form-group textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+.section-hint {
+  margin: -6px 0 14px 0;
+  font-size: 13px;
+  color: #a0aec0;
+}
+
+/* Editor de horarios */
+.schedule-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: 92px 46px 70px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f7fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+}
+
+.schedule-day {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.schedule-status {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.schedule-status.open {
+  color: #2f855a;
+}
+
+.schedule-times {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  transition: opacity 0.2s;
+}
+
+.schedule-times.disabled {
+  opacity: 0.45;
+}
+
+.schedule-times input[type="time"] {
+  width: 104px;
+  box-sizing: border-box;
+  padding: 9px 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.schedule-times input[type="time"]:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+.time-sep {
+  color: #a0aec0;
+  font-size: 13px;
+}
+
+/* Interruptor (switch) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 25px;
+  cursor: pointer;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-track {
+  position: absolute;
+  inset: 0;
+  background: #cbd5e0;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.switch-track::before {
+  content: '';
+  position: absolute;
+  height: 19px;
+  width: 19px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.switch input:checked + .switch-track {
+  background: #38a169;
+}
+
+.switch input:checked + .switch-track::before {
+  transform: translateX(19px);
+}
+
+/* Selector de chips (pagos / comodidades) */
+.chip-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.select-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e0;
+  background: #fff;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.select-chip:hover {
+  border-color: #90cdf4;
+  background: #f7fafc;
+}
+
+.select-chip.active {
+  background: #3182ce;
+  border-color: #3182ce;
+  color: #fff;
+  box-shadow: 0 4px 10px -2px rgba(49, 130, 206, 0.45);
+}
+
+.chip-icon {
+  font-size: 15px;
+}
+
+.btn-admin {
+  margin-top: 22px;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 60%, #2b6cb0 100%);
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -8px rgba(49, 130, 206, 0.75);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s;
+}
+
+.btn-admin:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -10px rgba(49, 130, 206, 0.85);
+}
+
+.btn-admin:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .form-row,
+  .schedule-row {
+    grid-template-columns: 1fr;
+  }
+  .schedule-times {
+    justify-content: flex-start;
+  }
+}
+
+.admin-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #718096;
+}
+
+.admin-footer p {
+  margin: 6px 0;
+}
+
+.admin-footer a {
+  color: #3182ce;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-footer a:hover {
+  text-decoration: underline;
+}
+
+.client-link a {
+  color: #718096;
+  font-weight: 500;
+  font-size: 13px;
+}
