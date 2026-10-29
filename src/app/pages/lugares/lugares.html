@@ -7,8 +7,12 @@
       <span class="logo-text">LOCALSPOT</span>
     </a>
     <nav class="nav-links">
-      <a routerLink="/lugares" class="active">Explorar</a>
+      <a routerLink="/lugares" [class.active]="!soloFavoritos" (click)="soloFavoritos = false; filtrar()">Explorar</a>
       <a (click)="irACategorias($event)">Categorías</a>
+      <a href="javascript:void(0)" [class.active]="soloFavoritos" (click)="toggleSoloFavoritos()" *ngIf="usuario">
+        ❤️ Mis Favoritos
+      </a>
+      <a routerLink="/preferencias" *ngIf="usuario">⚙️ Preferencias</a>
     </nav>
     <div class="nav-actions">
       <!-- Botón de Cerrar sesión en lugar de Login/Registro -->
@@ -24,21 +28,31 @@
         Explora {{ lugares.length }}+ lugares verificados y recomendados por la comunidad, todo en un solo lugar.
       </p>
 
-      <form class="search" (ngSubmit)="buscar()">
+      <div class="ai-toggle-wrapper">
+        <button type="button" class="btn-ia-toggle" [class.active]="modoIa" (click)="toggleModoIa()">
+          <span class="sparkle">✨</span>
+          <span>{{ modoIa ? 'Búsqueda Inteligente (Gemini activado)' : 'Activar recomendador inteligente Gemini' }}</span>
+        </button>
+      </div>
+
+      <form class="search" [class.search-ia]="modoIa" (ngSubmit)="buscar()">
         <div class="search-field">
           <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="text" name="q" [(ngModel)]="textoBusqueda" (input)="filtrar()"
-                 placeholder="¿Qué lugar estás buscando?" />
+          <input type="text" name="q" [(ngModel)]="textoBusqueda" (input)="!modoIa && filtrar()"
+                 [placeholder]="modoIa ? 'Cuéntale a Gemini qué deseas (ej: un café tranquilo con buen wifi para trabajar)...' : '¿Qué lugar estás buscando?'" />
         </div>
-        <div class="search-select">
+        <div class="search-select" *ngIf="!modoIa">
           <select name="cat" [(ngModel)]="categoriaFiltro" (change)="filtrar()">
             <option value="todas">Todas las categorías</option>
             <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
           </select>
         </div>
-        <button type="submit" class="btn-search">
-          <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          Buscar
+        <button type="submit" class="btn-search" [class.btn-search-ia]="modoIa" [disabled]="buscandoIa">
+          <span *ngIf="buscandoIa">Analizando con Gemini...</span>
+          <span *ngIf="!buscandoIa">
+            <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            {{ modoIa ? 'Preguntar a Gemini' : 'Buscar' }}
+          </span>
         </button>
       </form>
 
@@ -51,7 +65,7 @@
   </section>
 
   <!-- Categorías -->
-  <section class="section" id="categorias">
+  <section class="section" id="categorias" *ngIf="!soloFavoritos">
     <div class="section-head">
       <div>
         <h2>Explorar por categoría</h2>
@@ -73,16 +87,26 @@
   <section class="section" id="lugares">
     <div class="section-head">
       <div>
-        <h2>Lugares disponibles</h2>
+        <h2>{{ soloFavoritos ? '❤️ Mis Lugares Favoritos' : 'Lugares disponibles' }}</h2>
         <p>{{ lugaresFiltrados.length }} resultado(s) · Selecciona una tarjeta para ver el detalle.</p>
+      </div>
+      <div *ngIf="soloFavoritos">
+        <button class="link" (click)="toggleSoloFavoritos()">Ver todos los lugares →</button>
       </div>
     </div>
 
     <div class="grid" *ngIf="lugaresFiltrados.length > 0; else sinResultados">
       <a class="card" *ngFor="let lugar of lugaresFiltrados" [routerLink]="['/lugar', lugar.id]">
+        <div class="ia-banner" *ngIf="motivosIa[lugar.id]">
+          <span class="ia-tag">✨ Recomendación Gemini</span>
+          <p class="ia-reason">{{ motivosIa[lugar.id] }}</p>
+        </div>
         <div class="card-top">
           <div class="card-icon">{{ lugar.icono }}</div>
           <span class="badge">{{ nombreCategoria(lugar.categoria) }}</span>
+          <button type="button" class="btn-favorito-card" (click)="toggleFavorito(lugar.id, $event)" [title]="favoritosService.esFavorito(lugar.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'">
+            {{ favoritosService.esFavorito(lugar.id) ? '❤️' : '🤍' }}
+          </button>
         </div>
         <h3>{{ lugar.nombre }}</h3>
         <p class="address">
@@ -101,8 +125,9 @@
 
     <ng-template #sinResultados>
       <div class="empty">
-        <span>🔎</span>
-        <p>No se encontraron lugares que coincidan con tu búsqueda.</p>
+        <span>{{ soloFavoritos ? '🤍' : '🔎' }}</span>
+        <p *ngIf="!soloFavoritos">No se encontraron lugares que coincidan con tu búsqueda.</p>
+        <p *ngIf="soloFavoritos">Aún no has guardado ningún lugar en tus favoritos. Explora y pulsa ❤️ para guardarlos.</p>
       </div>
     </ng-template>
   </section>

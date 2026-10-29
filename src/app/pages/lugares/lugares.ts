@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LugaresService, Lugar } from '../../services/lugares.service';
+import { FavoritosService } from '../../services/favoritos.service';
+import { AuthService } from '../../services/auth';
 
 interface Categoria {
   valor: string;
@@ -20,6 +22,11 @@ interface Categoria {
 export class LugaresComponent implements OnInit {
   textoBusqueda = '';
   categoriaFiltro = 'todas';
+  modoIa = false;
+  buscandoIa = false;
+  motivosIa: Record<number, string> = {};
+  soloFavoritos = false;
+  usuario: any = null;
 
   categorias: Categoria[] = [
     { valor: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️' },
@@ -33,11 +40,27 @@ export class LugaresComponent implements OnInit {
   lugares: Lugar[] = [];
   lugaresFiltrados: Lugar[] = [];
 
-  constructor(private lugaresService: LugaresService) {}
+  constructor(
+    private lugaresService: LugaresService,
+    public favoritosService: FavoritosService,
+    private auth: AuthService
+  ) {}
 
   ngOnInit(): void {
+    this.usuario = this.auth.getUsuario();
     this.lugares = this.lugaresService.getLugaresPublicados();
     this.lugaresFiltrados = [...this.lugares];
+
+    if (this.usuario) {
+      this.favoritosService.cargarFavoritos().subscribe();
+    }
+
+    this.lugaresService.cargarLugares().subscribe(lugares => {
+      if (lugares && lugares.length > 0) {
+        this.lugares = lugares;
+        this.filtrar();
+      }
+    });
   }
 
   filtrar(): void {
@@ -48,11 +71,66 @@ export class LugaresComponent implements OnInit {
       );
       const coincideTexto = terminos.every(t => textoLugar.includes(t));
       const coincideCategoria = this.categoriaFiltro === 'todas' || l.categoria === this.categoriaFiltro;
-      return coincideTexto && coincideCategoria;
+      const coincideFavorito = !this.soloFavoritos || this.favoritosService.esFavorito(l.id);
+      return coincideTexto && coincideCategoria && coincideFavorito;
+    });
+  }
+
+  toggleSoloFavoritos(): void {
+    this.soloFavoritos = !this.soloFavoritos;
+    this.filtrar();
+  }
+
+  toggleModoIa(): void {
+    this.modoIa = !this.modoIa;
+    this.motivosIa = {};
+    if (!this.modoIa) {
+      this.filtrar();
+    }
+  }
+
+  toggleFavorito(lugarId: number, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.usuario) {
+      alert('Inicia sesión para guardar favoritos.');
+      return;
+    }
+    this.favoritosService.toggleFavorito(lugarId).subscribe({
+      next: () => {
+        if (this.soloFavoritos) {
+          this.filtrar();
+        }
+      }
     });
   }
 
   buscar(): void {
+    if (this.modoIa && this.textoBusqueda.trim()) {
+      this.buscandoIa = true;
+      this.lugaresService.buscarConIa(this.textoBusqueda.trim()).subscribe({
+        next: (items) => {
+          this.buscandoIa = false;
+          if (items && items.length > 0) {
+            this.motivosIa = {};
+            items.forEach(it => {
+              this.motivosIa[it.lugar.id] = it.motivoIa;
+            });
+            this.lugaresFiltrados = items.map(it => it.lugar);
+          } else {
+            this.filtrar();
+          }
+          document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
+        },
+        error: () => {
+          this.buscandoIa = false;
+          this.filtrar();
+          document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+      return;
+    }
+
     this.filtrar();
     document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
   }

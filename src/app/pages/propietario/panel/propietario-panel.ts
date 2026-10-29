@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth';
 import { LugaresService, Lugar, METODOS_PAGO, COMODIDADES, generarResumenHorario, horariosPorDefecto, OpcionCatalogo } from '../../../services/lugares.service';
+import { EstablecimientosService, EstablecimientoResponse } from '../../../services/establecimientos.service';
 
 @Component({
   selector: 'app-propietario-panel',
@@ -33,13 +34,13 @@ export class PropietarioPanelComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private lugaresService: LugaresService
+    private lugaresService: LugaresService,
+    private establecimientosService: EstablecimientosService
   ) {}
 
   ngOnInit(): void {
     this.usuario = this.auth.getUsuario();
     if (this.usuario) {
-      // Recupera los negocios creados antes del id único por correo (propietarioId = 1)
       this.lugaresService.reclamarNegociosHeredados(this.usuario.id);
     }
     this.cargarNegocios();
@@ -47,8 +48,61 @@ export class PropietarioPanelComponent implements OnInit {
 
   cargarNegocios(): void {
     if (this.usuario) {
-      this.misNegocios = this.lugaresService.getLugaresPorPropietario(this.usuario.id);
+      // 1. Cargar desde backend si es PROPIETARIO
+      this.establecimientosService.obtenerMisLugares().subscribe(backendLugares => {
+        if (backendLugares && backendLugares.length > 0) {
+          const adaptados: Lugar[] = backendLugares.map(b => ({
+            id: b.idLugar,
+            nombre: b.nombre,
+            categoria: this.mapearCategoria(b.idCategoria),
+            calificacion: 5.0,
+            direccion: b.direccion || 'Ubicación local',
+            icono: this.getIconoPorCategoria(this.mapearCategoria(b.idCategoria)),
+            descripcion: b.descripcion || '',
+            horario: b.horario || 'Lunes a Domingo: 10:00 - 20:00',
+            publicado: b.estadoVerificacion === 'VERIFICADO',
+            propietarioId: b.idPropietario,
+            latitud: b.latitud ? Number(b.latitud) : 4.3372,
+            longitud: b.longitud ? Number(b.longitud) : -74.3640,
+            fotos: [`https://picsum.photos/seed/lugar${b.idLugar}/800/600`],
+            rangoPrecio: b.precioMax ? (b.precioMax > 50000 ? 3 : b.precioMax > 20000 ? 2 : 1) : 2,
+            telefono: '3001234567',
+            whatsapp: '573001234567',
+            instagram: 'localspot',
+            web: '',
+            horarios: horariosPorDefecto(),
+            pagos: ['Efectivo', 'Tarjeta'],
+            comodidades: ['Wi-Fi gratis', 'Zona al aire libre']
+          }));
+          this.misNegocios = adaptados;
+        } else {
+          this.misNegocios = this.lugaresService.getLugaresPorPropietario(this.usuario.id);
+        }
+      });
     }
+  }
+
+  private mapearCategoria(id: number): string {
+    const mapa: Record<number, string> = {
+      1: 'restaurantes',
+      2: 'entretenimiento',
+      3: 'entretenimiento',
+      4: 'deportes',
+      5: 'compras'
+    };
+    return mapa[id] || 'restaurantes';
+  }
+
+  private getIconoPorCategoria(categoria: string): string {
+    const iconos: any = {
+      'restaurantes': '🍽️',
+      'cafes': '☕',
+      'bares': '🍸',
+      'entretenimiento': '🎬',
+      'deportes': '⚽',
+      'compras': '🛍️'
+    };
+    return iconos[categoria] || '📍';
   }
 
   togglePublicacion(negocio: Lugar): void {
@@ -58,44 +112,39 @@ export class PropietarioPanelComponent implements OnInit {
     }
     const nuevoEstado = !negocio.publicado;
     this.lugaresService.actualizarLugar(negocio.id, { publicado: nuevoEstado });
-    this.cargarNegocios();
-    
-    if (nuevoEstado) {
-      alert(`¡Felicidades! "${negocio.nombre}" ahora es visible en la categoría de ${this.getNombreCategoria(negocio.categoria)}.`);
-    } else {
-      alert(`"${negocio.nombre}" ha sido retirado de los catálogos públicos.`);
-    }
+    negocio.publicado = nuevoEstado;
   }
 
-  iniciarEdicion(negocio: Lugar): void {
+  esPropietario(negocio: Lugar): boolean {
+    return this.usuario && negocio.propietarioId === this.usuario.id;
+  }
+
+  editar(negocio: Lugar): void {
     if (!this.esPropietario(negocio)) {
-      alert('No tienes permiso para editar este establecimiento.');
+      alert('Solo puedes editar tus propios establecimientos.');
       return;
     }
-    this.editando = true;
-    this.negocioEnEdicion = {
+    this.negocioEnEdicion = { 
       ...negocio,
       fotos: [...(negocio.fotos || [])],
-      horarios: negocio.horarios && negocio.horarios.length
-        ? negocio.horarios.map(h => ({ ...h }))
-        : horariosPorDefecto(),
+      horarios: negocio.horarios ? JSON.parse(JSON.stringify(negocio.horarios)) : horariosPorDefecto(),
       pagos: [...(negocio.pagos || [])],
       comodidades: [...(negocio.comodidades || [])]
     };
+    this.editando = true;
   }
 
-  private esPropietario(negocio: Lugar): boolean {
-    return !!this.usuario && negocio.propietarioId === this.usuario.id;
+  iniciarEdicion(negocio: Lugar): void {
+    this.editar(negocio);
   }
 
   cancelarEdicion(): void {
     this.editando = false;
     this.negocioEnEdicion = {};
-    this.nuevaFotoUrl = '';
   }
 
   agregarFoto(): void {
-    if (this.nuevaFotoUrl.trim()) {
+    if (this.nuevaFotoUrl && this.nuevaFotoUrl.trim()) {
       if (!this.negocioEnEdicion.fotos) this.negocioEnEdicion.fotos = [];
       this.negocioEnEdicion.fotos.push(this.nuevaFotoUrl.trim());
       this.nuevaFotoUrl = '';
@@ -103,7 +152,9 @@ export class PropietarioPanelComponent implements OnInit {
   }
 
   eliminarFoto(index: number): void {
-    this.negocioEnEdicion.fotos.splice(index, 1);
+    if (this.negocioEnEdicion.fotos) {
+      this.negocioEnEdicion.fotos.splice(index, 1);
+    }
   }
 
   tienePago(nombre: string): boolean {
@@ -140,11 +191,9 @@ export class PropietarioPanelComponent implements OnInit {
         alert('No tienes permiso para modificar este establecimiento.');
         return;
       }
-      // Actualizar icono basado en categoría por si cambió
       const cat = this.categorias.find(c => c.valor === this.negocioEnEdicion.categoria);
       if (cat) this.negocioEnEdicion.icono = cat.icono;
 
-      // Mantener el resumen de horario sincronizado con el detalle por día
       this.negocioEnEdicion.horario = generarResumenHorario(this.negocioEnEdicion.horarios || []);
 
       this.lugaresService.actualizarLugar(this.negocioEnEdicion.id, this.negocioEnEdicion);

@@ -26,19 +26,15 @@ export class PropietarioLoginComponent {
     this.error = '';
     this.cargando = true;
 
-    // Simulación de carga rápida
-    setTimeout(() => {
-      this.auth.login(this.credenciales.correo, 'PROPIETARIO').subscribe({
-        next: () => {
-          this.cargando = false;
-          // Los propietarios van a su panel privado
-          this.router.navigate(['/propietario/panel']);
-        },
-        error: () => {
-          this.cargando = false;
-          this.error = 'Error al iniciar sesión.';
-        }
-      });
-    }, 500);
+    this.auth.login(this.credenciales.correo, 'PROPIETARIO', undefined, this.credenciales.password).subscribe({
+      next: () => {
+        this.cargando = false;
+        this.router.navigate(['/propietario/panel']);
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.error = err?.error?.mensaje || 'Error al iniciar sesión.';
+      }
+    });
   }
 }

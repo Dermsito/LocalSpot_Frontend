@@ -43,8 +43,18 @@
         />
       </div>
 
-      <button type="submit" class="btn-submit">Registrarse</button>
+      <button type="submit" class="btn-submit" [disabled]="cargando">
+        {{ cargando ? 'Registrando...' : 'Registrarse' }}
+      </button>
     </form>
+
+    <div class="divider">
+      <span>o regístrate con</span>
+    </div>
+
+    <div class="google-btn-container">
+      <div #googleBtn class="google-btn-wrapper"></div>
+    </div>
 
     <div class="login-footer">
       <p>¿Ya tienes una cuenta? <a routerLink="/login">Inicia Sesión</a></p>

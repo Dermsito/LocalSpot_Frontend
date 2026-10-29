@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of, map, catchError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface HorarioDia {
   dia: string;
@@ -104,6 +106,8 @@ export interface Lugar {
   horario: string;
   publicado: boolean;
   propietarioId: number;
+  latitud?: number;
+  longitud?: number;
   // Nuevos campos de personalización
   telefono?: string;
   whatsapp?: string;
@@ -260,7 +264,103 @@ export class LugaresService {
   private lugaresSubject = new BehaviorSubject<Lugar[]>(this.loadLugares());
   lugares$ = this.lugaresSubject.asObservable();
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
+
+  cargarLugares(): Observable<Lugar[]> {
+    return this.http.get<any>(`${environment.apiUrl}/lugares?size=50`).pipe(
+      map((res: any) => {
+        const content = res?.content;
+        if (Array.isArray(content) && content.length > 0) {
+          const adaptados: Lugar[] = content.map((b: any) => ({
+            id: b.idLugar,
+            nombre: b.nombre,
+            categoria: this.mapearCategoria(b.nombreCategoria || b.idCategoria),
+            calificacion: b.promedioCalificacion || 4.5,
+            direccion: b.direccion || 'Ubicación local',
+            icono: this.getIconoPorCategoria(this.mapearCategoria(b.nombreCategoria || b.idCategoria)),
+            descripcion: b.descripcion || '',
+            horario: b.horario || 'Lunes a Domingo: 10:00 - 20:00',
+            publicado: true,
+            propietarioId: b.idPropietario || 0,
+            latitud: b.latitud ? Number(b.latitud) : 4.3372,
+            longitud: b.longitud ? Number(b.longitud) : -74.3640,
+            fotos: b.fotos && b.fotos.length > 0 
+              ? b.fotos.map((f: any) => typeof f === 'string' ? f : f.urlFoto) 
+              : [`https://picsum.photos/seed/lugar${b.idLugar}/800/600`],
+            rangoPrecio: b.precioMax ? (b.precioMax > 50000 ? 3 : b.precioMax > 20000 ? 2 : 1) : 2,
+            telefono: '3001234567',
+            whatsapp: '573001234567',
+            instagram: 'localspot',
+            web: '',
+            horarios: horariosPorDefecto(),
+            pagos: ['Efectivo', 'Tarjeta'],
+            comodidades: ['Wi-Fi gratis', 'Zona al aire libre']
+          }));
+          this.saveLugares(adaptados);
+          return adaptados;
+        }
+        return this.getLugaresPublicados();
+      }),
+      catchError(() => of(this.getLugaresPublicados()))
+    );
+  }
+
+  buscarConIa(consulta: string): Observable<{ lugar: Lugar; motivoIa: string }[]> {
+    return this.http.post<any[]>(`${environment.apiUrl}/lugares/buscar-ia`, { consulta }).pipe(
+      map((items: any[]) => {
+        if (!Array.isArray(items)) return [];
+        return items.map((item: any) => {
+          const b = item.lugar;
+          const adaptado: Lugar = {
+            id: b.idLugar,
+            nombre: b.nombre,
+            categoria: this.mapearCategoria(b.nombreCategoria || b.idCategoria),
+            calificacion: b.promedioCalificacion || 4.5,
+            direccion: b.direccion || 'Ubicación local',
+            icono: this.getIconoPorCategoria(this.mapearCategoria(b.nombreCategoria || b.idCategoria)),
+            descripcion: b.descripcion || '',
+            horario: b.horario || 'Lunes a Domingo: 10:00 - 20:00',
+            publicado: true,
+            propietarioId: b.idPropietario || 0,
+            latitud: b.latitud ? Number(b.latitud) : 4.3372,
+            longitud: b.longitud ? Number(b.longitud) : -74.3640,
+            fotos: b.fotos && b.fotos.length > 0
+              ? b.fotos.map((f: any) => typeof f === 'string' ? f : f.urlFoto)
+              : [`https://picsum.photos/seed/lugar${b.idLugar}/800/600`],
+            rangoPrecio: b.precioMax ? (b.precioMax > 50000 ? 3 : b.precioMax > 20000 ? 2 : 1) : 2,
+            telefono: '3001234567',
+            whatsapp: '573001234567',
+            instagram: 'localspot',
+            web: '',
+            horarios: horariosPorDefecto(),
+            pagos: ['Efectivo', 'Tarjeta'],
+            comodidades: ['Wi-Fi gratis', 'Zona al aire libre']
+          };
+          return {
+            lugar: adaptado,
+            motivoIa: item.motivoIa
+          };
+        });
+      }),
+      catchError((err) => {
+        console.warn('Error en búsqueda con IA:', err);
+        return of([]);
+      })
+    );
+  }
+
+  private mapearCategoria(nombreOId: any): string {
+    const val = String(nombreOId || '').toLowerCase();
+    if (val.includes('restaurante') || val === '1') return 'restaurantes';
+    if (val.includes('cafe') || val.includes('cafeteria')) return 'cafes';
+    if (val.includes('bar')) return 'bares';
+    if (val.includes('entretenimiento') || val.includes('cine') || val === '2') return 'entretenimiento';
+    if (val.includes('deporte')) return 'deportes';
+    if (val.includes('compra') || val.includes('tienda') || val === '5') return 'compras';
+    if (val.includes('cultural') || val.includes('arte') || val === '3') return 'entretenimiento';
+    if (val.includes('naturaleza') || val.includes('aire') || val === '4') return 'entretenimiento';
+    return 'restaurantes';
+  }
 
   private loadLugares(): Lugar[] {
     const saved = localStorage.getItem(this.LUGARES_KEY);

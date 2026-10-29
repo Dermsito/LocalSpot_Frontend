@@ -25,7 +25,6 @@ export class AdminLoginComponent {
   onLoginAdmin(): void {
     this.error = '';
 
-    // Se reutiliza el mismo resolver que el login general (sin duplicar lógica).
     const { valido, rol, nombre } = this.auth.resolverCredenciales(
       this.credenciales.correo,
       this.credenciales.password
@@ -38,18 +37,15 @@ export class AdminLoginComponent {
 
     this.cargando = true;
 
-    // Simulación de carga rápida (mock, igual que los otros accesos)
-    setTimeout(() => {
-      this.auth.login(this.credenciales.correo, 'ADMINISTRADOR', nombre).subscribe({
-        next: () => {
-          this.cargando = false;
-          this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
-        },
-        error: () => {
-          this.cargando = false;
-          this.error = 'No se pudo iniciar sesión como administrador.';
-        }
-      });
-    }, 500);
+    this.auth.login(this.credenciales.correo, 'ADMINISTRADOR', nombre, this.credenciales.password).subscribe({
+      next: () => {
+        this.cargando = false;
+        this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.error = err?.error?.mensaje || 'No se pudo iniciar sesión como administrador.';
+      }
+    });
   }
 }

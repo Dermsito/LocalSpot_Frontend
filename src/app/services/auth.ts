@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, tap, catchError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type Rol = 'FINAL' | 'ADMINISTRADOR' | 'PROPIETARIO';
 
@@ -15,9 +17,6 @@ const LUGARES_STORAGE_KEY = 'localspot_lugares_mock';
 
 /**
  * Credenciales de PRUEBA (solo frontend) del administrador.
- * No son una cuenta real ni un mecanismo de seguridad: habilitan el panel de
- * administrador durante el desarrollo local. Cuando el backend esté conectado,
- * el rol y la autenticación vendrán del servidor.
  */
 export const CREDENCIALES_ADMIN_PRUEBA = {
   correo: 'admin1@gmail.com',
@@ -82,18 +81,64 @@ export function rutaInicialPorRol(rol: Rol | null | undefined): string {
   providedIn: 'root'
 })
 export class AuthService {
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
   /**
-   * MOCK LOGIN: No usa HttpClient, no usa el backend.
-   *
-   * IMPORTANTE (integración futura): en producción el rol NO se decide aquí,
-   * lo determina el backend en la respuesta del login. El parámetro `rol` es
-   * solo del simulador local; al conectar la API se reemplaza por
-   * `normalizarRol(respuestaBackend.usuario.rol)`.
+   * Intenta autenticarse contra el backend real (/api/auth/login).
+   * Si no se envía contraseña o el backend no está disponible, utiliza el mock.
    */
-  login(correo: string, rol: Rol = 'FINAL', nombre?: string): Observable<any> {
+  login(correo: string, rol: Rol = 'FINAL', nombre?: string, password?: string): Observable<any> {
     const correoNormalizado = correo.trim().toLowerCase();
+
+    if (password) {
+      return this.http.post<any>(`${environment.apiUrl}/auth/login`, {
+        correo: correoNormalizado,
+        contrasena: password
+      }).pipe(
+        tap((res: any) => {
+          const u = res?.usuario || res;
+          const rolNormalizado = normalizarRol(u?.rol);
+          const sesion: UsuarioSesion = {
+            id: u?.id,
+            nombre: u?.nombre || nombre || correoNormalizado.split('@')[0],
+            correo: correoNormalizado,
+            rol: rolNormalizado
+          };
+          this.guardarSesion({ token: res.token, usuario: sesion });
+          this.registrarCuentaMock(correoNormalizado, sesion.nombre, rolNormalizado);
+        }),
+        catchError((error) => {
+          if (error.status === 401 || error.status === 403) {
+            throw error;
+          }
+          return this.loginMock(correoNormalizado, rol, nombre);
+        })
+      );
+    }
+
+    return this.loginMock(correoNormalizado, rol, nombre);
+  }
+
+  loginConGoogle(idToken: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken }).pipe(
+      tap((res: any) => {
+        const u = res?.usuario || res;
+        const rolNormalizado = normalizarRol(u?.rol);
+        const sesion: UsuarioSesion = {
+          id: u?.id,
+          nombre: u?.nombre || 'Usuario Google',
+          correo: u?.correo || '',
+          rol: rolNormalizado
+        };
+        this.guardarSesion({ token: res.token, usuario: sesion });
+        if (sesion.correo) {
+          this.registrarCuentaMock(sesion.correo, sesion.nombre, rolNormalizado);
+        }
+      })
+    );
+  }
+
+  private loginMock(correoNormalizado: string, rol: Rol, nombre?: string): Observable<any> {
     const rolNormalizado = normalizarRol(rol);
     const nombreFinal = nombre || correoNormalizado.split('@')[0];
 
@@ -113,17 +158,7 @@ export class AuthService {
   }
 
   /**
-   * MOCK: resuelve el rol a partir de las credenciales ingresadas, para que un
-   * único formulario de login atienda a todos los roles.
-   *
-   * Orden de resolución:
-   *   1. Credenciales de administrador de prueba -> ADMINISTRADOR
-   *   2. Cuentas ya registradas localmente        -> su rol (p. ej. PROPIETARIO)
-   *   3. Correo con negocios guardados            -> PROPIETARIO
-   *   4. Resto                                    -> FINAL (USUARIO)
-   *
-   * `valido` solo es false cuando el correo es el del administrador y la
-   * contraseña no coincide (los demás roles mantienen el mock abierto).
+   * Resuelve el rol a partir de las credenciales ingresadas.
    */
   resolverCredenciales(correo: string, password: string): ResultadoCredenciales {
     const correoNormalizado = (correo ?? '').trim().toLowerCase();
@@ -148,10 +183,6 @@ export class AuthService {
     return { valido: true, rol: 'FINAL' };
   }
 
-  /**
-   * Genera un id estable y único por correo (hash djb2) para que cada
-   * propietario solo vea y administre sus propios negocios en el mock.
-   */
   private generarIdUsuario(correo: string): number {
     let hash = 5381;
     for (let i = 0; i < correo.length; i++) {
@@ -160,7 +191,6 @@ export class AuthService {
     return Math.abs(hash) % 1000000 || 1;
   }
 
-  /** ¿El correo ya tiene negocios guardados en el mock? (ids 1-6 son de ejemplo) */
   private tieneNegociosRegistrados(correo: string): boolean {
     try {
       const id = this.generarIdUsuario(correo);
@@ -187,8 +217,18 @@ export class AuthService {
   }
 
   registrar(usuario: any): Observable<any> {
-    console.log('Simulando registro en frontend:', usuario);
-    return of({ success: true });
+    const payload = {
+      nombre: usuario.nombre,
+      correo: (usuario.correo || '').trim().toLowerCase(),
+      contrasena: usuario.contrasena || usuario.password,
+      tipoUsuario: usuario.tipoUsuario || usuario.rol || 'FINAL'
+    };
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, payload).pipe(
+      catchError(() => {
+        console.log('Simulando registro en frontend (offline):', usuario);
+        return of({ success: true, usuario: payload });
+      })
+    );
   }
 
   logout(): void {
@@ -209,13 +249,26 @@ export class AuthService {
     return this.getUsuario()?.rol ?? null;
   }
 
-  /** Ruta a la que corresponde el rol de la sesión actual. */
   getRutaInicio(): string {
     return rutaInicialPorRol(this.getRol());
   }
 
   estaAutenticado(): boolean {
     return this.getToken() !== null;
+  }
+
+  solicitarRecuperacion(correo: string): Observable<any> {
+    const correoNormalizado = (correo || '').trim().toLowerCase();
+    return this.http.post<any>(`${environment.apiUrl}/auth/olvide-contrasena`, {
+      correo: correoNormalizado
+    });
+  }
+
+  restablecerContrasena(token: string, nuevaContrasena: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/restablecer-contrasena`, {
+      token: (token || '').trim(),
+      nuevaContrasena: (nuevaContrasena || '').trim()
+    });
   }
 
   private guardarSesion(respuesta: any): void {

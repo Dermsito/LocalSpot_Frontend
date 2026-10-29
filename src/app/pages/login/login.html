@@ -31,12 +31,24 @@
         />
       </div>
 
+      <div class="forgot-wrapper">
+        <a routerLink="/recuperar-contrasena" class="forgot-link">¿Olvidaste tu contraseña?</a>
+      </div>
+
       <p class="form-error" *ngIf="error">{{ error }}</p>
 
       <button type="submit" class="btn-submit" [disabled]="cargando">
         {{ cargando ? 'Ingresando...' : 'Iniciar Sesión' }}
       </button>
     </form>
+
+    <div class="divider">
+      <span>o continúa con</span>
+    </div>
+
+    <div class="google-btn-container">
+      <div #googleBtn class="google-btn-wrapper"></div>
+    </div>
 
     <div class="login-footer">
       <p>¿No tienes una cuenta? <a routerLink="/registro">Regístrate aquí</a></p>

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
 import { RegistroComponent } from './pages/registro/registro';
+import { PreferenciasComponent } from './pages/preferencias/preferencias';
 import { LugaresComponent } from './pages/lugares/lugares';
 import { DetalleLugarComponent } from './pages/detalle-lugar/detalle-lugar';
 import { AdminLoginComponent } from './pages/admin-login/admin-login';
@@ -24,6 +25,18 @@ export const routes: Routes = [
   {
     path: 'registro',
     component: RegistroComponent
+  },
+  {
+    path: 'recuperar-contrasena',
+    loadComponent: () => import('./pages/recuperar-contrasena/recuperar-contrasena').then(m => m.RecuperarContrasenaComponent)
+  },
+  {
+    path: 'restablecer-contrasena',
+    loadComponent: () => import('./pages/restablecer-contrasena/restablecer-contrasena').then(m => m.RestablecerContrasenaComponent)
+  },
+  {
+    path: 'preferencias',
+    component: PreferenciasComponent
   },
   {
     path: 'lugares',

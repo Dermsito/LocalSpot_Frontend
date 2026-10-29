@@ -181,6 +181,19 @@
     </div>
   </div>
 
+  <!-- Ubicación en Google Maps -->
+  <div class="content-card map-card" *ngIf="lugar">
+    <h2 class="section-title">📍 Ubicación en Google Maps</h2>
+    <p class="map-address" *ngIf="lugar.direccion" style="margin-bottom: 12px; color: #555;">
+      <strong>Dirección:</strong> {{ lugar.direccion }}
+    </p>
+    <app-mapa
+      [lat]="lugar.latitud"
+      [lng]="lugar.longitud"
+      [titulo]="lugar.nombre"
+    ></app-mapa>
+  </div>
+
   <!-- Reseñas -->
   <div class="content-card reviews-card">
     <h2 class="section-title">Reseñas y Opiniones ({{ lugar.calificaciones.length }})</h2>

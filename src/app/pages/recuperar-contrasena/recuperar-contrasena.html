@@ -1,0 +1,41 @@
+<div class="recuperar-wrapper">
+  <div class="recuperar-card">
+    <div class="recuperar-header">
+      <div class="logo-emoji">🔐</div>
+      <h1>Recuperar Contraseña</h1>
+      <p>Ingresa tu correo y te enviaremos las instrucciones para restablecer tu contraseña.</p>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="recuperar-form" *ngIf="!mensajeExito">
+      <div class="form-group">
+        <label for="correo">Correo electrónico</label>
+        <input 
+          type="email" 
+          id="correo"
+          [(ngModel)]="correo" 
+          name="correo" 
+          placeholder="tu-correo@ejemplo.com" 
+          required 
+          [disabled]="cargando"
+        />
+      </div>
+
+      <p class="form-error" *ngIf="error">{{ error }}</p>
+
+      <button type="submit" class="btn-submit" [disabled]="cargando">
+        {{ cargando ? 'Enviando enlace...' : 'Enviar enlace de recuperación' }}
+      </button>
+    </form>
+
+    <div class="estado-exito" *ngIf="mensajeExito">
+      <div class="icono-check">✉️</div>
+      <h3>¡Correo enviado!</h3>
+      <p>{{ mensajeExito }}</p>
+      <a routerLink="/login" class="btn-volver">Volver al inicio de sesión</a>
+    </div>
+
+    <div class="recuperar-footer" *ngIf="!mensajeExito">
+      <p>¿Recordaste tu contraseña? <a routerLink="/login">Inicia sesión</a></p>
+    </div>
+  </div>
+</div>
