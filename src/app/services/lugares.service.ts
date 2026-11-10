@@ -494,7 +494,10 @@ export class LugaresService {
   }
 
   getLugaresPorPropietario(propietarioId: number): Lugar[] {
-    return this.lugaresSubject.value.filter(l => l.propietarioId === propietarioId);
+    if (!propietarioId) return [];
+    return this.lugaresSubject.value.filter(
+      l => l.propietarioId === propietarioId && l.id > ID_MAXIMO_SEMILLA
+    );
   }
 
   getLugarById(id: number): Lugar | undefined {

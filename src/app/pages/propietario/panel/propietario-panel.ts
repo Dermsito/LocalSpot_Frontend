@@ -40,9 +40,6 @@ export class PropietarioPanelComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuario = this.auth.getUsuario();
-    if (this.usuario) {
-      this.lugaresService.reclamarNegociosHeredados(this.usuario.id);
-    }
     this.cargarNegocios();
   }
 
@@ -51,7 +48,9 @@ export class PropietarioPanelComponent implements OnInit {
       // 1. Cargar desde backend si es PROPIETARIO
       this.establecimientosService.obtenerMisLugares().subscribe(backendLugares => {
         if (backendLugares && backendLugares.length > 0) {
-          const adaptados: Lugar[] = backendLugares.map(b => ({
+          const adaptados: Lugar[] = backendLugares
+            .filter(b => !b.idPropietario || b.idPropietario === this.usuario.id)
+            .map(b => ({
             id: b.idLugar,
             nombre: b.nombre,
             categoria: this.mapearCategoria(b.idCategoria),
