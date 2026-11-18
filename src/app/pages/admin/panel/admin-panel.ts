@@ -76,7 +76,7 @@ export class AdminPanelComponent implements OnInit {
     });
   }
 
-  private mapearLugarAdmin(item: any): Lugar {
+  private mapearLugarAdmin(item: any): any {
     const mapCat: Record<number, { valor: string; icono: string }> = {
       1: { valor: 'restaurantes', icono: '🍽️' },
       2: { valor: 'entretenimiento', icono: '🎬' },
