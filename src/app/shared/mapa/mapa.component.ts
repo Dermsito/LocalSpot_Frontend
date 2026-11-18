@@ -10,12 +10,39 @@ declare global {
   }
 }
 
+export interface CiudadPreset {
+  nombre: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+}
+
 @Component({
   selector: 'app-mapa',
   standalone: true,
   imports: [CommonModule],
   template: `
     <div class="map-wrapper">
+      <div class="city-presets">
+        <span class="presets-label">Ubicar en:</span>
+        <button
+          type="button"
+          class="preset-btn"
+          *ngIf="direccion"
+          [class.active]="ciudadActiva === 'local'"
+          (click)="geocodificarDireccion(direccion, true)">
+          🏪 Dirección del local
+        </button>
+        <button
+          type="button"
+          class="preset-btn"
+          *ngFor="let c of ciudadesPreset"
+          [class.active]="ciudadActiva === c.nombre"
+          (click)="seleccionarCiudad(c)">
+          📍 {{ c.nombre }}
+        </button>
+      </div>
+
       <div #mapContainer class="map-container"></div>
 
       <div class="map-footer" *ngIf="lat && lng">
@@ -46,6 +73,42 @@ declare global {
       overflow: hidden;
       box-shadow: 0 4px 14px rgba(0,0,0,0.08);
       background: #f1f3f4;
+    }
+    .city-presets {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .presets-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #475569;
+      margin-right: 4px;
+    }
+    .preset-btn {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-btn:hover {
+      border-color: #1a73e8;
+      color: #1a73e8;
+      background: #eff6ff;
+    }
+    .preset-btn.active {
+      background: #1a73e8;
+      border-color: #1a73e8;
+      color: #ffffff;
     }
     .map-container {
       width: 100%;
@@ -121,6 +184,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() lat: number = 4.3372;
   @Input() lng: number = -74.3640;
   @Input() titulo: string = 'Ubicación';
+  @Input() direccion: string = '';
   @Input() editable: boolean = false;
   @Input() zoom: number = 15;
 
@@ -132,6 +196,13 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
   error = '';
   map: any;
   marker: any;
+  ciudadActiva = 'local';
+
+  ciudadesPreset: CiudadPreset[] = [
+    { nombre: 'Fusagasugá, Cundinamarca', lat: 4.3372, lng: -74.3640, zoom: 15 },
+    { nombre: 'Bogotá, D.C.', lat: 4.6315, lng: -74.0640, zoom: 13 },
+    { nombre: 'Arbeláez, Cundinamarca', lat: 4.2722, lng: -74.4158, zoom: 15 }
+  ];
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -142,11 +213,71 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['direccion'] && this.direccion && this.map) {
+      this.geocodificarDireccion(this.direccion, false);
+      return;
+    }
     if ((changes['lat'] || changes['lng']) && this.map && this.marker) {
       const pos = { lat: Number(this.lat) || 4.3372, lng: Number(this.lng) || -74.3640 };
       this.map.setCenter(pos);
       this.marker.setPosition(pos);
       this.cdr.detectChanges();
+    }
+  }
+
+  seleccionarCiudad(ciudad: CiudadPreset): void {
+    this.ciudadActiva = ciudad.nombre;
+    this.actualizarPosicion(ciudad.lat, ciudad.lng, ciudad.zoom, true);
+  }
+
+  private actualizarPosicion(lat: number, lng: number, zoomNivel?: number, emitir = false): void {
+    this.lat = lat;
+    this.lng = lng;
+    if (this.map && this.marker) {
+      const pos = { lat, lng };
+      this.map.setCenter(pos);
+      if (zoomNivel) {
+        this.map.setZoom(zoomNivel);
+      }
+      this.marker.setPosition(pos);
+    }
+    if (emitir) {
+      this.coordenadasCambio.emit({ lat, lng });
+    }
+    this.cdr.detectChanges();
+  }
+
+  geocodificarDireccion(dir: string, emitir = false): void {
+    if (!dir || !dir.trim()) return;
+    this.ciudadActiva = 'local';
+
+    const dirLower = dir.toLowerCase();
+    const consulta = (dirLower.includes('fusagasug') || dirLower.includes('bogot') || dirLower.includes('arbelaez') || dirLower.includes('arbeláez'))
+      ? `${dir}, Colombia`
+      : `${dir}, Fusagasugá, Cundinamarca, Colombia`;
+
+    if (window.google?.maps?.Geocoder) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: consulta }, (results: any, status: any) => {
+        if (status === 'OK' && results?.[0]?.geometry?.location) {
+          const loc = results[0].geometry.location;
+          this.actualizarPosicion(loc.lat(), loc.lng(), 16, emitir);
+        } else {
+          this.aplicarRespaldoPorTexto(dirLower, emitir);
+        }
+      });
+    } else {
+      this.aplicarRespaldoPorTexto(dirLower, emitir);
+    }
+  }
+
+  private aplicarRespaldoPorTexto(dirLower: string, emitir: boolean): void {
+    if (dirLower.includes('arbelaez') || dirLower.includes('arbeláez')) {
+      this.actualizarPosicion(4.2722, -74.4158, 15, emitir);
+    } else if (dirLower.includes('fusagasug')) {
+      this.actualizarPosicion(4.3372, -74.3640, 15, emitir);
+    } else if (dirLower.includes('bogot')) {
+      this.actualizarPosicion(4.6315, -74.0640, 14, emitir);
     }
   }
 
@@ -249,6 +380,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
           this.coordenadasCambio.emit({ lat: newLat, lng: newLng });
           this.cdr.detectChanges();
         });
+      }
+
+      if (this.direccion) {
+        this.geocodificarDireccion(this.direccion, false);
       }
 
       this.cdr.detectChanges();

@@ -1,4 +1,4 @@
-<div class="detalle-wrapper">
+﻿<div class="detalle-wrapper">
   <!-- Botón Volver -->
   <a routerLink="/lugares" class="btn-back">
     <span>←</span> Volver a Explorar
@@ -190,7 +190,7 @@
     <app-mapa
       [lat]="lugar.latitud"
       [lng]="lugar.longitud"
-      [titulo]="lugar.nombre"
+      [titulo]="lugar.nombre" [direccion]="lugar.direccion"
     ></app-mapa>
   </div>
 
