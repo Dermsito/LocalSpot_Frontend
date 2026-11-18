@@ -27,6 +27,9 @@ interface Categoria {
   styleUrls: ['./propietario-registro.css']
 })
 export class PropietarioRegistroComponent implements OnInit {
+  usuarioLogueado: any = null;
+  errorMensaje = '';
+
   nuevoNegocio = {
     nombre: '',
     correo: '',
@@ -35,7 +38,9 @@ export class PropietarioRegistroComponent implements OnInit {
     categoria: '',
     descripcion: '',
     direccion: '',
-    telefono: ''
+    telefono: '',
+    latitud: 4.3372,
+    longitud: -74.3640
   };
 
   horarios = horariosPorDefecto();
@@ -63,7 +68,9 @@ export class PropietarioRegistroComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.usuarioLogueado = this.authService.getUsuario();
+  }
 
   tienePago(nombre: string): boolean {
     return this.pagos.includes(nombre);
@@ -86,6 +93,12 @@ export class PropietarioRegistroComponent implements OnInit {
   }
 
   onRegistro(): void {
+    this.errorMensaje = '';
+    if (!this.nuevoNegocio.nombreNegocio.trim() || !this.nuevoNegocio.categoria) {
+      this.errorMensaje = 'Completa el nombre del negocio y selecciona una categoría.';
+      return;
+    }
+
     this.cargando = true;
     const usuarioActual = this.authService.getUsuario();
 
@@ -100,8 +113,9 @@ export class PropietarioRegistroComponent implements OnInit {
         const usuario = this.authService.getUsuario();
         this.enviarEstablecimientoBackend(usuario?.id || 0);
       },
-      error: () => {
-        this.finalizarRegistroLocal(0);
+      error: (err) => {
+        this.cargando = false;
+        this.errorMensaje = err?.error?.message || 'No se pudo iniciar sesión o crear la cuenta de propietario.';
       }
     });
   }
@@ -109,18 +123,30 @@ export class PropietarioRegistroComponent implements OnInit {
   private enviarEstablecimientoBackend(propietarioId: number): void {
     const catObj = this.categorias.find(c => c.valor === this.nuevoNegocio.categoria) || this.categorias[0];
     const formData = new FormData();
-    formData.append('nombre', this.nuevoNegocio.nombreNegocio);
+    formData.append('nombre', this.nuevoNegocio.nombreNegocio.trim());
     formData.append('idCategoria', catObj.dbId.toString());
     formData.append('descripcion', this.nuevoNegocio.descripcion || 'Lugar registrado en LocalSpot');
-    formData.append('direccion', this.nuevoNegocio.direccion || 'Ubicación local');
+    formData.append('direccion', this.nuevoNegocio.direccion || 'Fusagasugá, Cundinamarca');
     formData.append('horario', generarResumenHorario(this.horarios));
+
+    if (this.nuevoNegocio.latitud != null) {
+      formData.append('latitud', this.nuevoNegocio.latitud.toString());
+    }
+    if (this.nuevoNegocio.longitud != null) {
+      formData.append('longitud', this.nuevoNegocio.longitud.toString());
+    }
 
     this.establecimientosService.registrarEstablecimiento(formData).subscribe({
       next: () => {
         this.finalizarRegistroLocal(propietarioId);
       },
-      error: () => {
-        this.finalizarRegistroLocal(propietarioId);
+      error: (err) => {
+        this.cargando = false;
+        if (err?.status === 401 || err?.status === 403) {
+          this.errorMensaje = 'Tu sesión expiró. Cierra sesión y vuelve a ingresar como propietario para guardar el negocio.';
+        } else {
+          this.errorMensaje = err?.error?.message || 'Error al guardar el establecimiento en el servidor.';
+        }
       }
     });
   }

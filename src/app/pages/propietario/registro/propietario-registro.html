@@ -2,53 +2,59 @@
   <div class="admin-card">
     <div class="admin-header">
       <div class="admin-badge">🏪</div>
-      <span class="admin-tag">Nuevo propietario</span>
-      <h1>Registra tu negocio</h1>
-      <p>Crea tu cuenta y registra tu establecimiento en LocalSpot.</p>
+      <span class="admin-tag">{{ usuarioLogueado ? 'Nuevo establecimiento' : 'Nuevo propietario' }}</span>
+      <h1>{{ usuarioLogueado ? 'Registra un nuevo negocio' : 'Registra tu negocio' }}</h1>
+      <p>{{ usuarioLogueado ? 'Agrega un nuevo local a tu cuenta de propietario.' : 'Crea tu cuenta y registra tu establecimiento en LocalSpot.' }}</p>
+    </div>
+
+    <div *ngIf="errorMensaje" style="background: #fee2e2; color: #b91c1c; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;">
+      {{ errorMensaje }}
     </div>
 
     <form (ngSubmit)="onRegistro()" class="admin-form">
-      <!-- Sección: Datos del Propietario -->
-      <h3 class="section-title">Datos de la cuenta</h3>
-      
-      <div class="form-group">
-        <label for="nombre">Nombre completo</label>
-        <input
-          type="text"
-          id="nombre"
-          [(ngModel)]="nuevoNegocio.nombre"
-          name="nombre"
-          placeholder="Ej: Juan Pérez"
-          required
-        />
-      </div>
+      <!-- Sección: Datos del Propietario (solo si NO está logueado) -->
+      <ng-container *ngIf="!usuarioLogueado">
+        <h3 class="section-title">Datos de la cuenta</h3>
 
-      <div class="form-row">
         <div class="form-group">
-          <label for="correo">Correo electrónico</label>
+          <label for="nombre">Nombre completo</label>
           <input
-            type="email"
-            id="correo"
-            [(ngModel)]="nuevoNegocio.correo"
-            name="correo"
-            placeholder="propietario@correo.com"
+            type="text"
+            id="nombre"
+            [(ngModel)]="nuevoNegocio.nombre"
+            name="nombre"
+            placeholder="Ej: Juan Pérez"
             required
           />
         </div>
 
-        <div class="form-group">
-          <label for="contrasena">Contraseña</label>
-          <input
-            type="password"
-            id="contrasena"
-            [(ngModel)]="nuevoNegocio.contrasena"
-            name="contrasena"
-            placeholder="Mínimo 8 caracteres"
-            required
-            minlength="8"
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="correo">Correo electrónico</label>
+            <input
+              type="email"
+              id="correo"
+              [(ngModel)]="nuevoNegocio.correo"
+              name="correo"
+              placeholder="propietario@correo.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="contrasena">Contraseña</label>
+            <input
+              type="password"
+              id="contrasena"
+              [(ngModel)]="nuevoNegocio.contrasena"
+              name="contrasena"
+              placeholder="Mínimo 8 caracteres"
+              required
+              minlength="8"
+            />
+          </div>
         </div>
-      </div>
+      </ng-container>
 
       <!-- Sección: Datos del Negocio -->
       <h3 class="section-title">Información del establecimiento</h3>
@@ -60,7 +66,7 @@
           id="nombreNegocio"
           [(ngModel)]="nuevoNegocio.nombreNegocio"
           name="nombreNegocio"
-          placeholder="Ej: Café Aroma de Montaña"
+          placeholder="Ej: El Marino Colombia Restaurantes"
           required
         />
       </div>
@@ -81,8 +87,34 @@
             id="direccion"
             [(ngModel)]="nuevoNegocio.direccion"
             name="direccion"
-            placeholder="Calle 123 #45-67"
+            placeholder="Cl. 7 #6-45, Fusagasugá, Cundinamarca"
             required
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="latitud">Latitud (Mapa)</label>
+          <input
+            type="number"
+            step="any"
+            id="latitud"
+            [(ngModel)]="nuevoNegocio.latitud"
+            name="latitud"
+            placeholder="4.3372"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="longitud">Longitud (Mapa)</label>
+          <input
+            type="number"
+            step="any"
+            id="longitud"
+            [(ngModel)]="nuevoNegocio.longitud"
+            name="longitud"
+            placeholder="-74.3640"
           />
         </div>
       </div>
@@ -94,7 +126,7 @@
           id="telefono"
           [(ngModel)]="nuevoNegocio.telefono"
           name="telefono"
-          placeholder="Ej: 6012345678"
+          placeholder="Ej: 3104567890"
         />
       </div>
 
@@ -146,13 +178,17 @@
       </div>
 
       <button type="submit" class="btn-admin" [disabled]="cargando">
-        {{ cargando ? 'Registrando...' : 'Crear cuenta y negocio' }}
+        {{ cargando ? 'Guardando...' : (usuarioLogueado ? 'Guardar negocio' : 'Crear cuenta y negocio') }}
       </button>
     </form>
 
-    <div class="admin-footer">
+    <div class="admin-footer" *ngIf="!usuarioLogueado">
       <p>¿Ya tienes cuenta de propietario? <a routerLink="/propietario/login">Inicia sesión</a></p>
       <p class="client-link"><a routerLink="/registro">← Registrarme como cliente</a></p>
+    </div>
+
+    <div class="admin-footer" *ngIf="usuarioLogueado">
+      <p><a routerLink="/propietario/panel">← Volver a mi panel</a></p>
     </div>
   </div>
 </div>
