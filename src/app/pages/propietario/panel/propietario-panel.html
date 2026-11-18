@@ -1,4 +1,4 @@
-<div class="panel-container">
+﻿<div class="panel-container">
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-emoji">🏢</div>
@@ -32,7 +32,7 @@
       <div>
         <h1>Hola, {{ usuario?.nombre }}</h1>
         <p *ngIf="!editando">Administra la información y el diseño de tus establecimientos registrados.</p>
-        <p *ngIf="editando">Personaliza cada detalle para atraer más clientes.</p>
+        <p *ngIf="editando">Personaliza cada detalle y ubica el pin exacto de tu local en el mapa.</p>
       </div>
       <button *ngIf="!editando && misNegocios.length > 0" routerLink="/propietario/registro" class="btn-primary">
         <span class="btn-plus">＋</span> Registrar nuevo negocio
@@ -108,7 +108,8 @@
         </div>
 
         <div class="form-section">
-          <h3>Ubicación</h3>
+          <h3>Ubicación en Google Maps</h3>
+          <p class="section-hint">Selecciona tu municipio de la Región del Sumapaz y haz clic o arrastra el pin rojo exactamente encima de tu local.</p>
           <div class="form-row">
             <div class="form-group">
               <label>Dirección física</label>
@@ -118,6 +119,15 @@
               <label>Teléfono fijo</label>
               <input type="text" [(ngModel)]="negocioEnEdicion.telefono" name="telefono" placeholder="Ej: 6012345678">
             </div>
+          </div>
+          <div class="form-group">
+            <app-mapa
+              [lat]="negocioEnEdicion.latitud"
+              [lng]="negocioEnEdicion.longitud"
+              [titulo]="negocioEnEdicion.nombre || 'Mi local'"
+              [editable]="true"
+              (coordenadasCambio)="onCoordenadasCambio($event)">
+            </app-mapa>
           </div>
         </div>
 

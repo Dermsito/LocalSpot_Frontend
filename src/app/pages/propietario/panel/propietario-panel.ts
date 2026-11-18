@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../../services/auth';
 import {
   LugaresService,
@@ -13,11 +14,13 @@ import {
   OpcionCatalogo
 } from '../../../services/lugares.service';
 import { EstablecimientosService } from '../../../services/establecimientos.service';
+import { MapaComponent } from '../../../shared/mapa/mapa.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-propietario-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, MapaComponent],
   templateUrl: './propietario-panel.html',
   styleUrls: ['./propietario-panel.css']
 })
@@ -30,12 +33,12 @@ export class PropietarioPanelComponent implements OnInit {
   nuevaFotoUrl = '';
 
   categorias = [
-    { valor: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️' },
-    { valor: 'cafes', nombre: 'Cafeterías', icono: '☕' },
-    { valor: 'bares', nombre: 'Bares', icono: '🍸' },
-    { valor: 'entretenimiento', nombre: 'Entretenimiento', icono: '🎬' },
-    { valor: 'deportes', nombre: 'Deportes', icono: '⚽' },
-    { valor: 'compras', nombre: 'Compras', icono: '🛍️' }
+    { valor: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️', dbId: 1 },
+    { valor: 'cafes', nombre: 'Cafeterías', icono: '☕', dbId: 1 },
+    { valor: 'bares', nombre: 'Bares', icono: '🍸', dbId: 2 },
+    { valor: 'entretenimiento', nombre: 'Entretenimiento', icono: '🎬', dbId: 2 },
+    { valor: 'deportes', nombre: 'Deportes', icono: '⚽', dbId: 4 },
+    { valor: 'compras', nombre: 'Compras', icono: '🛍️', dbId: 5 }
   ];
 
   metodosPago: OpcionCatalogo[] = METODOS_PAGO;
@@ -45,6 +48,7 @@ export class PropietarioPanelComponent implements OnInit {
     private auth: AuthService,
     private lugaresService: LugaresService,
     private establecimientosService: EstablecimientosService,
+    private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -52,6 +56,11 @@ export class PropietarioPanelComponent implements OnInit {
     this.usuario = this.auth.getUsuario();
     this.misNegocios = [];
     this.cargarNegocios();
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.auth.getToken() || localStorage.getItem('token') || '';
+    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
   }
 
   cargarNegocios(): void {
@@ -105,6 +114,11 @@ export class PropietarioPanelComponent implements OnInit {
     });
   }
 
+  onCoordenadasCambio(coords: { lat: number; lng: number }): void {
+    this.negocioEnEdicion.latitud = coords.lat;
+    this.negocioEnEdicion.longitud = coords.lng;
+  }
+
   private mapearCategoria(id: number): string {
     const mapa: Record<number, string> = {
       1: 'restaurantes',
@@ -139,6 +153,8 @@ export class PropietarioPanelComponent implements OnInit {
     }
     this.negocioEnEdicion = {
       ...negocio,
+      latitud: negocio.latitud ? Number(negocio.latitud) : 4.3372,
+      longitud: negocio.longitud ? Number(negocio.longitud) : -74.3640,
       fotos: [...(negocio.fotos || [])],
       horarios: negocio.horarios ? JSON.parse(JSON.stringify(negocio.horarios)) : horariosPorDefecto(),
       pagos: [...(negocio.pagos || [])],
@@ -199,21 +215,41 @@ export class PropietarioPanelComponent implements OnInit {
   }
 
   guardarCambios(): void {
-    if (this.negocioEnEdicion.id) {
-      if (!this.esPropietario(this.negocioEnEdicion)) {
-        alert('No tienes permiso para modificar este establecimiento.');
-        return;
-      }
-      const cat = this.categorias.find(c => c.valor === this.negocioEnEdicion.categoria);
-      if (cat) this.negocioEnEdicion.icono = cat.icono;
-
-      this.negocioEnEdicion.horario = generarResumenHorario(this.negocioEnEdicion.horarios || []);
-
-      this.lugaresService.actualizarLugar(this.negocioEnEdicion.id, this.negocioEnEdicion);
-      this.editando = false;
-      this.cargarNegocios();
-      alert('Toda la información de tu negocio ha sido actualizada correctamente.');
+    if (!this.negocioEnEdicion.id) return;
+    if (!this.esPropietario(this.negocioEnEdicion)) {
+      alert('No tienes permiso para modificar este establecimiento.');
+      return;
     }
+
+    const cat = this.categorias.find(c => c.valor === this.negocioEnEdicion.categoria) || this.categorias[0];
+    this.negocioEnEdicion.icono = cat.icono;
+    this.negocioEnEdicion.horario = generarResumenHorario(this.negocioEnEdicion.horarios || []);
+
+    const url = `${environment.apiUrl}/establecimientos/${this.negocioEnEdicion.id}`;
+    const payload = {
+      nombre: this.negocioEnEdicion.nombre,
+      descripcion: this.negocioEnEdicion.descripcion || '',
+      direccion: this.negocioEnEdicion.direccion || '',
+      horario: this.negocioEnEdicion.horario || '',
+      idCategoria: cat.dbId,
+      latitud: this.negocioEnEdicion.latitud,
+      longitud: this.negocioEnEdicion.longitud,
+      precioMin: 0,
+      precioMax: this.negocioEnEdicion.rangoPrecio === 3 ? 60000 : this.negocioEnEdicion.rangoPrecio === 2 ? 30000 : 15000
+    };
+
+    this.http.put<any>(url, payload, { headers: this.getAuthHeaders() }).subscribe({
+      next: () => {
+        this.lugaresService.actualizarLugar(this.negocioEnEdicion.id, this.negocioEnEdicion);
+        this.lugaresService.cargarLugares().subscribe();
+        this.editando = false;
+        this.cargarNegocios();
+        alert('Ubicación y datos de tu negocio actualizados correctamente.');
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Error al guardar los cambios en el servidor.');
+      }
+    });
   }
 
   getNombreCategoria(valor: string): string {
