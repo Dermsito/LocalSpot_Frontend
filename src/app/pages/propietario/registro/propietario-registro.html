@@ -1,4 +1,4 @@
-<div class="admin-wrapper">
+﻿<div class="admin-wrapper">
   <div class="admin-card">
     <div class="admin-header">
       <div class="admin-badge">🏪</div>
@@ -12,7 +12,6 @@
     </div>
 
     <form (ngSubmit)="onRegistro()" class="admin-form">
-      <!-- Sección: Datos del Propietario (solo si NO está logueado) -->
       <ng-container *ngIf="!usuarioLogueado">
         <h3 class="section-title">Datos de la cuenta</h3>
 
@@ -56,7 +55,6 @@
         </div>
       </ng-container>
 
-      <!-- Sección: Datos del Negocio -->
       <h3 class="section-title">Información del establecimiento</h3>
 
       <div class="form-group">
@@ -81,16 +79,27 @@
         </div>
 
         <div class="form-group">
-          <label for="direccion">Dirección (ciudad y barrio/calle)</label>
+          <label for="direccion">Dirección física</label>
           <input
             type="text"
             id="direccion"
             [(ngModel)]="nuevoNegocio.direccion"
             name="direccion"
-            placeholder="Ej: Cl. 7 #6-45, Fusagasugá, Cundinamarca"
+            placeholder="Ej: Calle 22 #50-211, Fusagasugá"
             required
           />
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ubicación exacta en el mapa (haz clic o arrastra el pin sobre tu local)</label>
+        <app-mapa
+          [lat]="nuevoNegocio.latitud"
+          [lng]="nuevoNegocio.longitud"
+          [titulo]="nuevoNegocio.nombreNegocio || 'Ubicación del negocio'"
+          [editable]="true"
+          (coordenadasCambio)="onCoordenadasCambio($event)">
+        </app-mapa>
       </div>
 
       <div class="form-group">

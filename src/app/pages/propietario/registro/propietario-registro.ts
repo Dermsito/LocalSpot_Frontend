@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,6 +12,7 @@ import {
 } from '../../../services/lugares.service';
 import { AuthService } from '../../../services/auth';
 import { EstablecimientosService } from '../../../services/establecimientos.service';
+import { MapaComponent } from '../../../shared/mapa/mapa.component';
 
 interface Categoria {
   valor: string;
@@ -22,7 +23,7 @@ interface Categoria {
 @Component({
   selector: 'app-propietario-registro',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, MapaComponent],
   templateUrl: './propietario-registro.html',
   styleUrls: ['./propietario-registro.css']
 })
@@ -38,7 +39,9 @@ export class PropietarioRegistroComponent implements OnInit {
     categoria: '',
     descripcion: '',
     direccion: '',
-    telefono: ''
+    telefono: '',
+    latitud: 4.3372,
+    longitud: -74.3640
   };
 
   horarios = horariosPorDefecto();
@@ -68,6 +71,11 @@ export class PropietarioRegistroComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioLogueado = this.authService.getUsuario();
+  }
+
+  onCoordenadasCambio(coords: { lat: number; lng: number }): void {
+    this.nuevoNegocio.latitud = coords.lat;
+    this.nuevoNegocio.longitud = coords.lng;
   }
 
   tienePago(nombre: string): boolean {
@@ -126,6 +134,8 @@ export class PropietarioRegistroComponent implements OnInit {
     formData.append('descripcion', this.nuevoNegocio.descripcion || 'Lugar registrado en LocalSpot');
     formData.append('direccion', this.nuevoNegocio.direccion.trim());
     formData.append('horario', generarResumenHorario(this.horarios));
+    formData.append('latitud', this.nuevoNegocio.latitud.toString());
+    formData.append('longitud', this.nuevoNegocio.longitud.toString());
 
     this.establecimientosService.registrarEstablecimiento(formData).subscribe({
       next: () => {
@@ -153,6 +163,8 @@ export class PropietarioRegistroComponent implements OnInit {
       horarios: this.horarios,
       pagos: this.pagos,
       comodidades: this.comodidades,
+      latitud: this.nuevoNegocio.latitud,
+      longitud: this.nuevoNegocio.longitud,
       propietarioId: propietarioId,
       publicado: false
     });
