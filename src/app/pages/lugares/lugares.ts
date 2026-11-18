@@ -5,7 +5,6 @@ import { RouterLink } from '@angular/router';
 import { LugaresService, Lugar } from '../../services/lugares.service';
 import { FavoritosService } from '../../services/favoritos.service';
 import { AuthService } from '../../services/auth';
-import { PreferenciasService, PreferenciaDto } from '../../services/preferencias.service';
 
 interface Categoria {
   valor: string;
@@ -29,7 +28,6 @@ export class LugaresComponent implements OnInit {
   tieneResultadosIa = false;
   soloFavoritos = false;
   usuario: any = null;
-  preferenciasUsuario: PreferenciaDto[] = [];
 
   categorias: Categoria[] = [
     { valor: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️' },
@@ -47,7 +45,6 @@ export class LugaresComponent implements OnInit {
     private lugaresService: LugaresService,
     public favoritosService: FavoritosService,
     private auth: AuthService,
-    private preferenciasService: PreferenciasService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -58,10 +55,6 @@ export class LugaresComponent implements OnInit {
 
     if (this.usuario) {
       this.favoritosService.cargarFavoritos().subscribe();
-      this.preferenciasService.obtenerPreferencias().subscribe((prefs: PreferenciaDto[]) => {
-        this.preferenciasUsuario = prefs || [];
-        this.cdr.detectChanges();
-      });
     }
 
     this.lugaresService.cargarLugares().subscribe(lugares => {
@@ -179,16 +172,6 @@ export class LugaresComponent implements OnInit {
 
   nombreCategoria(valor: string): string {
     return this.categorias.find(c => c.valor === valor)?.nombre ?? valor;
-  }
-
-  get tienePreferencias(): boolean {
-    return this.preferenciasUsuario.length > 0;
-  }
-
-  get categoriasPreferidasTexto(): string {
-    return this.preferenciasUsuario
-      .map(p => p.nombreCategoria || 'Categoría')
-      .join(', ');
   }
 
   estrellas(calificacion: number): boolean[] {

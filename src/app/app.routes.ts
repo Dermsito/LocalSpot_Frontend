@@ -24,10 +24,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/restablecer-contrasena/restablecer-contrasena').then(m => m.RestablecerContrasenaComponent)
   },
   {
-    path: 'preferencias',
-    loadComponent: () => import('./pages/preferencias/preferencias').then(m => m.PreferenciasComponent)
-  },
-  {
     path: 'lugares',
     loadComponent: () => import('./pages/lugares/lugares').then(m => m.LugaresComponent)
   },

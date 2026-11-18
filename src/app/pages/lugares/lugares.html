@@ -12,7 +12,6 @@
       <a href="javascript:void(0)" [class.active]="soloFavoritos" (click)="toggleSoloFavoritos()" *ngIf="usuario">
         ❤️ Mis Favoritos
       </a>
-      <a routerLink="/preferencias" *ngIf="usuario">⚙️ Preferencias</a>
     </nav>
     <div class="nav-actions">
       <!-- Botón de Cerrar sesión en lugar de Login/Registro -->
@@ -85,18 +84,6 @@
 
   <!-- Lugares -->
   <section class="section" id="lugares">
-
-    <!-- Banner de preferencias -->
-    <div class="preferencias-banner" *ngIf="tienePreferencias && !tieneResultadosIa">
-      <div class="pref-banner-content">
-        <span class="pref-icon">✨</span>
-        <div class="pref-text">
-          <strong>Basado en tus preferencias</strong>
-          <p>Te mostramos lugares de: {{ categoriasPreferidasTexto }}</p>
-        </div>
-        <a routerLink="/preferencias" class="pref-edit">Editar</a>
-      </div>
-    </div>
 
     <div class="section-head">
       <div>
