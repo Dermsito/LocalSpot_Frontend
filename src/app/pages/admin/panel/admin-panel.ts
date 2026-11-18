@@ -94,6 +94,8 @@ export class AdminPanelComponent implements OnInit {
       descripcion: item.descripcion || '',
       telefono: '',
       horario: item.horario || '',
+      calificacion: 4.5,
+      fotos: [],
       rating: 4.5,
       resenas: 0,
       latitud: item.latitud,
