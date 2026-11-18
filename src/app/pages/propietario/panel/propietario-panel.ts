@@ -1,10 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth';
-import { LugaresService, Lugar, METODOS_PAGO, COMODIDADES, generarResumenHorario, horariosPorDefecto, OpcionCatalogo } from '../../../services/lugares.service';
-import { EstablecimientosService, EstablecimientoResponse } from '../../../services/establecimientos.service';
+import {
+  LugaresService,
+  Lugar,
+  METODOS_PAGO,
+  COMODIDADES,
+  generarResumenHorario,
+  horariosPorDefecto,
+  OpcionCatalogo
+} from '../../../services/lugares.service';
+import { EstablecimientosService } from '../../../services/establecimientos.service';
 
 @Component({
   selector: 'app-propietario-panel',
@@ -16,6 +24,7 @@ import { EstablecimientosService, EstablecimientoResponse } from '../../../servi
 export class PropietarioPanelComponent implements OnInit {
   usuario: any = null;
   misNegocios: Lugar[] = [];
+  cargando = false;
   editando = false;
   negocioEnEdicion: any = {};
   nuevaFotoUrl = '';
@@ -35,50 +44,65 @@ export class PropietarioPanelComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private lugaresService: LugaresService,
-    private establecimientosService: EstablecimientosService
+    private establecimientosService: EstablecimientosService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.usuario = this.auth.getUsuario();
+    this.misNegocios = [];
     this.cargarNegocios();
   }
 
   cargarNegocios(): void {
-    if (this.usuario) {
-      // 1. Cargar desde backend si es PROPIETARIO
-      this.establecimientosService.obtenerMisLugares().subscribe(backendLugares => {
-        if (backendLugares && backendLugares.length > 0) {
-          const adaptados: Lugar[] = backendLugares
-            .filter(b => !b.idPropietario || b.idPropietario === this.usuario.id)
-            .map(b => ({
-            id: b.idLugar,
-            nombre: b.nombre,
-            categoria: this.mapearCategoria(b.idCategoria),
-            calificacion: 5.0,
-            direccion: b.direccion || 'Ubicación local',
-            icono: this.getIconoPorCategoria(this.mapearCategoria(b.idCategoria)),
-            descripcion: b.descripcion || '',
-            horario: b.horario || 'Lunes a Domingo: 10:00 - 20:00',
-            publicado: b.estadoVerificacion === 'VERIFICADO',
-            propietarioId: b.idPropietario,
-            latitud: b.latitud ? Number(b.latitud) : 4.3372,
-            longitud: b.longitud ? Number(b.longitud) : -74.3640,
-            fotos: [`https://picsum.photos/seed/lugar${b.idLugar}/800/600`],
-            rangoPrecio: b.precioMax ? (b.precioMax > 50000 ? 3 : b.precioMax > 20000 ? 2 : 1) : 2,
-            telefono: '3001234567',
-            whatsapp: '573001234567',
-            instagram: 'localspot',
-            web: '',
-            horarios: horariosPorDefecto(),
-            pagos: ['Efectivo', 'Tarjeta'],
-            comodidades: ['Wi-Fi gratis', 'Zona al aire libre']
-          }));
-          this.misNegocios = adaptados;
-        } else {
-          this.misNegocios = this.lugaresService.getLugaresPorPropietario(this.usuario.id);
-        }
-      });
+    if (!this.usuario || !this.usuario.id) {
+      this.misNegocios = [];
+      return;
     }
+
+    const idPropietarioActual = Number(this.usuario.id);
+    this.cargando = true;
+
+    this.establecimientosService.obtenerMisLugares().subscribe({
+      next: (backendLugares) => {
+        this.cargando = false;
+        if (Array.isArray(backendLugares) && backendLugares.length > 0) {
+          this.misNegocios = backendLugares
+            .filter(b => b.idPropietario != null && Number(b.idPropietario) === idPropietarioActual)
+            .map(b => ({
+              id: b.idLugar,
+              nombre: b.nombre,
+              categoria: this.mapearCategoria(b.idCategoria),
+              calificacion: 5.0,
+              direccion: b.direccion || 'Ubicación local',
+              icono: this.getIconoPorCategoria(this.mapearCategoria(b.idCategoria)),
+              descripcion: b.descripcion || '',
+              horario: b.horario || 'Lunes a Domingo: 10:00 - 20:00',
+              publicado: b.estadoVerificacion === 'VERIFICADO',
+              propietarioId: Number(b.idPropietario),
+              latitud: b.latitud ? Number(b.latitud) : 4.3372,
+              longitud: b.longitud ? Number(b.longitud) : -74.3640,
+              fotos: [`https://picsum.photos/seed/lugar${b.idLugar}/800/600`],
+              rangoPrecio: b.precioMax ? (b.precioMax > 50000 ? 3 : b.precioMax > 20000 ? 2 : 1) : 2,
+              telefono: '3001234567',
+              whatsapp: '573001234567',
+              instagram: 'localspot',
+              web: '',
+              horarios: horariosPorDefecto(),
+              pagos: ['Efectivo', 'Tarjeta'],
+              comodidades: ['Wi-Fi gratis', 'Zona al aire libre']
+            }));
+        } else {
+          this.misNegocios = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cargando = false;
+        this.misNegocios = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private mapearCategoria(id: number): string {
@@ -93,13 +117,13 @@ export class PropietarioPanelComponent implements OnInit {
   }
 
   private getIconoPorCategoria(categoria: string): string {
-    const iconos: any = {
-      'restaurantes': '🍽️',
-      'cafes': '☕',
-      'bares': '🍸',
-      'entretenimiento': '🎬',
-      'deportes': '⚽',
-      'compras': '🛍️'
+    const iconos: Record<string, string> = {
+      restaurantes: '🍽️',
+      cafes: '☕',
+      bares: '🍸',
+      entretenimiento: '🎬',
+      deportes: '⚽',
+      compras: '🛍️'
     };
     return iconos[categoria] || '📍';
   }
@@ -115,7 +139,7 @@ export class PropietarioPanelComponent implements OnInit {
   }
 
   esPropietario(negocio: Lugar): boolean {
-    return this.usuario && negocio.propietarioId === this.usuario.id;
+    return Boolean(this.usuario && negocio.propietarioId && Number(negocio.propietarioId) === Number(this.usuario.id));
   }
 
   editar(negocio: Lugar): void {
@@ -123,7 +147,7 @@ export class PropietarioPanelComponent implements OnInit {
       alert('Solo puedes editar tus propios establecimientos.');
       return;
     }
-    this.negocioEnEdicion = { 
+    this.negocioEnEdicion = {
       ...negocio,
       fotos: [...(negocio.fotos || [])],
       horarios: negocio.horarios ? JSON.parse(JSON.stringify(negocio.horarios)) : horariosPorDefecto(),
@@ -207,6 +231,7 @@ export class PropietarioPanelComponent implements OnInit {
   }
 
   logout(): void {
+    this.misNegocios = [];
     this.auth.logout();
   }
 }

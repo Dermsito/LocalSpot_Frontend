@@ -85,6 +85,19 @@
 
   <!-- Lugares -->
   <section class="section" id="lugares">
+
+    <!-- Banner de preferencias -->
+    <div class="preferencias-banner" *ngIf="tienePreferencias && !tieneResultadosIa">
+      <div class="pref-banner-content">
+        <span class="pref-icon">✨</span>
+        <div class="pref-text">
+          <strong>Basado en tus preferencias</strong>
+          <p>Te mostramos lugares de: {{ categoriasPreferidasTexto }}</p>
+        </div>
+        <a routerLink="/preferencias" class="pref-edit">Editar</a>
+      </div>
+    </div>
+
     <div class="section-head">
       <div>
         <h2>{{ soloFavoritos ? '❤️ Mis Lugares Favoritos' : 'Lugares disponibles' }}</h2>

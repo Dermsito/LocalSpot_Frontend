@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LugaresService, Lugar } from '../../services/lugares.service';
 import { FavoritosService } from '../../services/favoritos.service';
 import { AuthService } from '../../services/auth';
+import { PreferenciasService, PreferenciaDto } from '../../services/preferencias.service';
 
 interface Categoria {
   valor: string;
@@ -25,8 +26,10 @@ export class LugaresComponent implements OnInit {
   modoIa = false;
   buscandoIa = false;
   motivosIa: Record<number, string> = {};
+  tieneResultadosIa = false;
   soloFavoritos = false;
   usuario: any = null;
+  preferenciasUsuario: PreferenciaDto[] = [];
 
   categorias: Categoria[] = [
     { valor: 'restaurantes', nombre: 'Restaurantes', icono: '🍽️' },
@@ -43,7 +46,9 @@ export class LugaresComponent implements OnInit {
   constructor(
     private lugaresService: LugaresService,
     public favoritosService: FavoritosService,
-    private auth: AuthService
+    private auth: AuthService,
+    private preferenciasService: PreferenciasService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -53,12 +58,19 @@ export class LugaresComponent implements OnInit {
 
     if (this.usuario) {
       this.favoritosService.cargarFavoritos().subscribe();
+      this.preferenciasService.obtenerPreferencias().subscribe((prefs: PreferenciaDto[]) => {
+        this.preferenciasUsuario = prefs || [];
+        this.cdr.detectChanges();
+      });
     }
 
     this.lugaresService.cargarLugares().subscribe(lugares => {
       if (lugares && lugares.length > 0) {
         this.lugares = lugares;
-        this.filtrar();
+        // No sobrescribir si hay resultados de IA activos
+        if (!this.tieneResultadosIa) {
+          this.filtrar();
+        }
       }
     });
   }
@@ -84,6 +96,7 @@ export class LugaresComponent implements OnInit {
   toggleModoIa(): void {
     this.modoIa = !this.modoIa;
     this.motivosIa = {};
+    this.tieneResultadosIa = false;
     if (!this.modoIa) {
       this.filtrar();
     }
@@ -108,6 +121,7 @@ export class LugaresComponent implements OnInit {
   buscar(): void {
     if (this.modoIa && this.textoBusqueda.trim()) {
       this.buscandoIa = true;
+      this.tieneResultadosIa = false;
       this.lugaresService.buscarConIa(this.textoBusqueda.trim()).subscribe({
         next: (items) => {
           this.buscandoIa = false;
@@ -116,21 +130,28 @@ export class LugaresComponent implements OnInit {
             items.forEach(it => {
               this.motivosIa[it.lugar.id] = it.motivoIa;
             });
+            // Solo mostrar los lugares recomendados por la IA
             this.lugaresFiltrados = items.map(it => it.lugar);
+            this.tieneResultadosIa = true;
           } else {
+            this.tieneResultadosIa = false;
             this.filtrar();
           }
+          this.cdr.detectChanges();
           document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
         },
         error: () => {
           this.buscandoIa = false;
+          this.tieneResultadosIa = false;
           this.filtrar();
+          this.cdr.detectChanges();
           document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
         }
       });
       return;
     }
 
+    this.tieneResultadosIa = false;
     this.filtrar();
     document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
   }
@@ -150,12 +171,24 @@ export class LugaresComponent implements OnInit {
 
   seleccionarCategoria(valor: string): void {
     this.categoriaFiltro = this.categoriaFiltro === valor ? 'todas' : valor;
+    this.tieneResultadosIa = false;
+    this.motivosIa = {};
     this.filtrar();
     document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   nombreCategoria(valor: string): string {
     return this.categorias.find(c => c.valor === valor)?.nombre ?? valor;
+  }
+
+  get tienePreferencias(): boolean {
+    return this.preferenciasUsuario.length > 0;
+  }
+
+  get categoriasPreferidasTexto(): string {
+    return this.preferenciasUsuario
+      .map(p => p.nombreCategoria || 'Categoría')
+      .join(', ');
   }
 
   estrellas(calificacion: number): boolean[] {

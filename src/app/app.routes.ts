@@ -1,15 +1,4 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './pages/login/login';
-import { RegistroComponent } from './pages/registro/registro';
-import { PreferenciasComponent } from './pages/preferencias/preferencias';
-import { LugaresComponent } from './pages/lugares/lugares';
-import { DetalleLugarComponent } from './pages/detalle-lugar/detalle-lugar';
-import { AdminLoginComponent } from './pages/admin-login/admin-login';
-import { AdminRegistroComponent } from './pages/admin-registro/admin-registro';
-import { PropietarioLoginComponent } from './pages/propietario/login/propietario-login';
-import { PropietarioRegistroComponent } from './pages/propietario/registro/propietario-registro';
-import { PropietarioPanelComponent } from './pages/propietario/panel/propietario-panel';
-import { AdminPanelComponent } from './pages/admin/panel/admin-panel';
 import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
@@ -20,11 +9,11 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    component: LoginComponent
+    loadComponent: () => import('./pages/login/login').then(m => m.LoginComponent)
   },
   {
     path: 'registro',
-    component: RegistroComponent
+    loadComponent: () => import('./pages/registro/registro').then(m => m.RegistroComponent)
   },
   {
     path: 'recuperar-contrasena',
@@ -36,40 +25,40 @@ export const routes: Routes = [
   },
   {
     path: 'preferencias',
-    component: PreferenciasComponent
+    loadComponent: () => import('./pages/preferencias/preferencias').then(m => m.PreferenciasComponent)
   },
   {
     path: 'lugares',
-    component: LugaresComponent
+    loadComponent: () => import('./pages/lugares/lugares').then(m => m.LugaresComponent)
   },
   {
     path: 'lugar/:id',
-    component: DetalleLugarComponent
+    loadComponent: () => import('./pages/detalle-lugar/detalle-lugar').then(m => m.DetalleLugarComponent)
   },
   {
     path: 'admin/login',
-    component: AdminLoginComponent
+    loadComponent: () => import('./pages/admin-login/admin-login').then(m => m.AdminLoginComponent)
   },
   {
     path: 'admin/registro',
-    component: AdminRegistroComponent
+    loadComponent: () => import('./pages/admin-registro/admin-registro').then(m => m.AdminRegistroComponent)
   },
   {
     path: 'admin/panel',
-    component: AdminPanelComponent,
+    loadComponent: () => import('./pages/admin/panel/admin-panel').then(m => m.AdminPanelComponent),
     canActivate: [roleGuard('ADMINISTRADOR')]
   },
   {
     path: 'propietario/login',
-    component: PropietarioLoginComponent
+    loadComponent: () => import('./pages/propietario/login/propietario-login').then(m => m.PropietarioLoginComponent)
   },
   {
     path: 'propietario/registro',
-    component: PropietarioRegistroComponent
+    loadComponent: () => import('./pages/propietario/registro/propietario-registro').then(m => m.PropietarioRegistroComponent)
   },
   {
     path: 'propietario/panel',
-    component: PropietarioPanelComponent,
+    loadComponent: () => import('./pages/propietario/panel/propietario-panel').then(m => m.PropietarioPanelComponent),
     canActivate: [roleGuard('PROPIETARIO')]
   }
 ];

@@ -103,6 +103,54 @@
 
 /* ---------- Secciones ---------- */
 .section { max-width: 1160px; margin: 0 auto; padding: 56px 20px 0; }
+
+/* Banner de preferencias */
+.preferencias-banner {
+  background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+.pref-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pref-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.pref-text {
+  flex: 1;
+}
+.pref-text strong {
+  font-size: 16px;
+  color: #4338ca;
+  font-weight: 700;
+  display: block;
+}
+.pref-text p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #6366f1;
+}
+.pref-edit {
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.pref-edit:hover {
+  background: var(--primary-dark);
+}
+
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
 .section-head h2 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -.5px; }
 .section-head p { margin: 0; font-size: 14px; color: var(--muted); }
