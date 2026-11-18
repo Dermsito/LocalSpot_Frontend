@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
@@ -17,14 +17,14 @@ declare global {
   template: `
     <div class="map-wrapper">
       <div #mapContainer class="map-container"></div>
-      
+
       <div class="map-footer" *ngIf="lat && lng">
         <span class="coords-text">📍 Coordenadas: {{ lat.toFixed(4) }}, {{ lng.toFixed(4) }}</span>
         <a [href]="getUrlComoLlegar()" target="_blank" rel="noopener" class="btn-como-llegar">
           🚗 Cómo llegar (Google Maps) ↗
         </a>
       </div>
-      
+
       <div *ngIf="cargando" class="map-loading">
         <div class="spinner"></div>
         <p>Cargando Google Maps...</p>
@@ -86,6 +86,7 @@ declare global {
       gap: 12px;
       color: #555;
       font-size: 0.9rem;
+      pointer-events: none;
     }
     .spinner {
       width: 32px;
@@ -132,6 +133,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
   map: any;
   marker: any;
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   ngOnInit(): void {}
 
   ngAfterViewInit(): void {
@@ -143,6 +146,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
       const pos = { lat: Number(this.lat) || 4.3372, lng: Number(this.lng) || -74.3640 };
       this.map.setCenter(pos);
       this.marker.setPosition(pos);
+      this.cdr.detectChanges();
     }
   }
 
@@ -182,6 +186,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
       window.__googleMapsLoading = false;
       this.cargando = false;
       this.error = 'No se pudo cargar Google Maps. Verifica tu conexión o API Key.';
+      this.cdr.detectChanges();
     };
 
     document.head.appendChild(script);
@@ -190,6 +195,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
   private inicializarMapa(): void {
     try {
       this.cargando = false;
+      this.cdr.detectChanges();
+
       if (!this.mapContainer?.nativeElement || !window.google?.maps) {
         return;
       }
@@ -230,6 +237,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
           this.lat = newLat;
           this.lng = newLng;
           this.coordenadasCambio.emit({ lat: newLat, lng: newLng });
+          this.cdr.detectChanges();
         });
 
         this.map.addListener('click', (event: any) => {
@@ -239,11 +247,15 @@ export class MapaComponent implements OnInit, AfterViewInit, OnChanges {
           this.lng = newLng;
           this.marker.setPosition(event.latLng);
           this.coordenadasCambio.emit({ lat: newLat, lng: newLng });
+          this.cdr.detectChanges();
         });
       }
+
+      this.cdr.detectChanges();
     } catch (e: any) {
       this.cargando = false;
       this.error = 'Error inicializando el mapa.';
+      this.cdr.detectChanges();
     }
   }
 }
