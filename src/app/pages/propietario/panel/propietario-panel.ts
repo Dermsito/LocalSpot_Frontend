@@ -128,16 +128,6 @@ export class PropietarioPanelComponent implements OnInit {
     return iconos[categoria] || '📍';
   }
 
-  togglePublicacion(negocio: Lugar): void {
-    if (!this.esPropietario(negocio)) {
-      alert('No tienes permiso para publicar este establecimiento.');
-      return;
-    }
-    const nuevoEstado = !negocio.publicado;
-    this.lugaresService.actualizarLugar(negocio.id, { publicado: nuevoEstado });
-    negocio.publicado = nuevoEstado;
-  }
-
   esPropietario(negocio: Lugar): boolean {
     return Boolean(this.usuario && negocio.propietarioId && Number(negocio.propietarioId) === Number(this.usuario.id));
   }

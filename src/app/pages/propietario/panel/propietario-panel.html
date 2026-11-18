@@ -5,10 +5,13 @@
       <h2>LocalSpot</h2>
       <span class="user-role">Panel Propietario</span>
     </div>
-    
+
     <nav class="sidebar-nav">
       <a (click)="cancelarEdicion()" class="nav-item" [class.active]="!editando">
-        <span class="icon">📊</span> Resumen
+        <span class="icon">📊</span> Mis negocios
+      </a>
+      <a routerLink="/propietario/registro" class="nav-item">
+        <span class="icon">➕</span> Registrar negocio
       </a>
       <a (click)="misNegocios.length > 0 && iniciarEdicion(misNegocios[0])" class="nav-item" [class.active]="editando" [class.disabled]="misNegocios.length === 0">
         <span class="icon">🏬</span> Personalizar mi sitio
@@ -25,10 +28,15 @@
   </aside>
 
   <main class="main-content">
-    <header class="content-header">
-      <h1>Hola, {{ usuario?.nombre }}</h1>
-      <p *ngIf="!editando">Gestiona la visibilidad y el diseño de tu negocio.</p>
-      <p *ngIf="editando">Personaliza cada detalle para atraer más clientes.</p>
+    <header class="content-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1>Hola, {{ usuario?.nombre }}</h1>
+        <p *ngIf="!editando">Administra la información y el diseño de tus establecimientos registrados.</p>
+        <p *ngIf="editando">Personaliza cada detalle para atraer más clientes.</p>
+      </div>
+      <button *ngIf="!editando && misNegocios.length > 0" routerLink="/propietario/registro" class="btn-primary">
+        <span class="btn-plus">＋</span> Registrar nuevo negocio
+      </button>
     </header>
 
     <!-- Vista de Resumen -->
@@ -40,10 +48,10 @@
             <h3>{{ negocio.nombre }}</h3>
           </div>
           <span class="status-badge" [class.published]="negocio.publicado">
-            {{ negocio.publicado ? 'Publicado' : 'Borrador' }}
+            {{ negocio.publicado ? 'Publicado' : 'Pendiente de revisión' }}
           </span>
         </div>
-        
+
         <div class="negocio-preview">
           <div class="preview-banner" [style.backgroundImage]="'url(' + (negocio.fotos[0] || 'https://via.placeholder.com/400x150?text=Sin+Foto') + ')'"></div>
           <div class="preview-details">
@@ -54,17 +62,14 @@
         </div>
 
         <div class="card-actions">
-          <button (click)="iniciarEdicion(negocio)" class="btn-edit">Personalizar información</button>
-          <button (click)="togglePublicacion(negocio)" [class.btn-publish]="!negocio.publicado" [class.btn-unpublish]="negocio.publicado">
-            {{ negocio.publicado ? 'Quitar de catálogos' : 'Publicar ahora' }}
-          </button>
+          <button (click)="iniciarEdicion(negocio)" class="btn-edit" style="width: 100%;">Personalizar información</button>
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="misNegocios.length === 0">
+      <div class="empty-state" *ngIf="!cargando && misNegocios.length === 0">
         <div class="empty-icon">🏪</div>
         <h3>Aún no has registrado ningún negocio</h3>
-        <p>Crea tu establecimiento, personalízalo con fotos, horarios y toda tu información, y publícalo para que tus clientes lo encuentren.</p>
+        <p>Crea tu establecimiento, personalízalo con fotos, horarios y toda tu información para enviarlo a verificación.</p>
         <button routerLink="/propietario/registro" class="btn-primary">
           <span class="btn-plus">＋</span> Registrar mi primer negocio
         </button>
