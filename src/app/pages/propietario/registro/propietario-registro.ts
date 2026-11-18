@@ -38,9 +38,7 @@ export class PropietarioRegistroComponent implements OnInit {
     categoria: '',
     descripcion: '',
     direccion: '',
-    telefono: '',
-    latitud: 4.3372,
-    longitud: -74.3640
+    telefono: ''
   };
 
   horarios = horariosPorDefecto();
@@ -94,8 +92,8 @@ export class PropietarioRegistroComponent implements OnInit {
 
   onRegistro(): void {
     this.errorMensaje = '';
-    if (!this.nuevoNegocio.nombreNegocio.trim() || !this.nuevoNegocio.categoria) {
-      this.errorMensaje = 'Completa el nombre del negocio y selecciona una categoría.';
+    if (!this.nuevoNegocio.nombreNegocio.trim() || !this.nuevoNegocio.categoria || !this.nuevoNegocio.direccion.trim()) {
+      this.errorMensaje = 'Completa el nombre del negocio, la categoría y la dirección.';
       return;
     }
 
@@ -126,15 +124,8 @@ export class PropietarioRegistroComponent implements OnInit {
     formData.append('nombre', this.nuevoNegocio.nombreNegocio.trim());
     formData.append('idCategoria', catObj.dbId.toString());
     formData.append('descripcion', this.nuevoNegocio.descripcion || 'Lugar registrado en LocalSpot');
-    formData.append('direccion', this.nuevoNegocio.direccion || 'Fusagasugá, Cundinamarca');
+    formData.append('direccion', this.nuevoNegocio.direccion.trim());
     formData.append('horario', generarResumenHorario(this.horarios));
-
-    if (this.nuevoNegocio.latitud != null) {
-      formData.append('latitud', this.nuevoNegocio.latitud.toString());
-    }
-    if (this.nuevoNegocio.longitud != null) {
-      formData.append('longitud', this.nuevoNegocio.longitud.toString());
-    }
 
     this.establecimientosService.registrarEstablecimiento(formData).subscribe({
       next: () => {
