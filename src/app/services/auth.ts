@@ -67,7 +67,7 @@ export class AuthService {
       correo: correoNormalizado,
       contrasena: contrasenaLimpia
     }).pipe(
-      timeout(20000),
+      timeout(65000),
       tap((res: any) => {
         const u = res?.usuario || res;
         const rolNormalizado = normalizarRol(u?.rol);
@@ -84,7 +84,7 @@ export class AuthService {
 
   loginConGoogle(idToken: string): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken }).pipe(
-      timeout(20000),
+      timeout(65000),
       tap((res: any) => {
         const u = res?.usuario || res;
         const rolNormalizado = normalizarRol(u?.rol);
@@ -116,7 +116,7 @@ export class AuthService {
       tipoUsuario: usuario.tipoUsuario || usuario.rol || 'FINAL'
     };
     return this.http.post<any>(`${environment.apiUrl}/auth/register`, payload).pipe(
-      timeout(20000)
+      timeout(65000)
     );
   }
 
