@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, throwError } from 'rxjs';
+import { Observable, tap, throwError, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type Rol = 'FINAL' | 'ADMINISTRADOR' | 'PROPIETARIO';
@@ -67,6 +67,7 @@ export class AuthService {
       correo: correoNormalizado,
       contrasena: contrasenaLimpia
     }).pipe(
+      timeout(20000),
       tap((res: any) => {
         const u = res?.usuario || res;
         const rolNormalizado = normalizarRol(u?.rol);
@@ -83,6 +84,7 @@ export class AuthService {
 
   loginConGoogle(idToken: string): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken }).pipe(
+      timeout(20000),
       tap((res: any) => {
         const u = res?.usuario || res;
         const rolNormalizado = normalizarRol(u?.rol);
@@ -113,7 +115,9 @@ export class AuthService {
       contrasena: usuario.contrasena || usuario.password,
       tipoUsuario: usuario.tipoUsuario || usuario.rol || 'FINAL'
     };
-    return this.http.post<any>(`${environment.apiUrl}/auth/register`, payload);
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, payload).pipe(
+      timeout(20000)
+    );
   }
 
   logout(): void {

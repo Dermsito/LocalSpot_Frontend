@@ -1,7 +1,8 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, NgZone } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService, rutaInicialPorRol } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 
@@ -29,7 +30,8 @@ export class RegistroComponent implements AfterViewInit {
   constructor(
     private router: Router,
     private auth: AuthService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngAfterViewInit(): void {
@@ -71,15 +73,20 @@ export class RegistroComponent implements AfterViewInit {
     this.ngZone.run(() => {
       this.cargando = true;
       this.error = '';
+      this.cdr.detectChanges();
 
-      this.auth.loginConGoogle(response.credential).subscribe({
-        next: () => {
+      this.auth.loginConGoogle(response.credential).pipe(
+        finalize(() => {
           this.cargando = false;
+          this.cdr.detectChanges();
+        })
+      ).subscribe({
+        next: () => {
           this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
         },
         error: (err: any) => {
-          this.cargando = false;
-          this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo registrar con Google';
+          this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo registrar con Google.';
+          this.cdr.detectChanges();
         }
       });
     });
@@ -88,31 +95,41 @@ export class RegistroComponent implements AfterViewInit {
   onRegistro(): void {
     this.error = '';
 
-    if (!this.nuevoUsuario.nombre.trim() || !this.nuevoUsuario.correo.trim() || !this.nuevoUsuario.password.trim()) {
+    const nombre = (this.nuevoUsuario.nombre || '').trim();
+    const correo = (this.nuevoUsuario.correo || '').trim();
+    const password = (this.nuevoUsuario.password || '').trim();
+
+    if (!nombre || !correo || !password) {
       this.error = 'Por favor completa todos los campos.';
+      this.cdr.detectChanges();
       return;
     }
 
-    if (this.nuevoUsuario.password.trim().length < 8) {
+    if (password.length < 8) {
       this.error = 'La contraseña debe tener al menos 8 caracteres.';
+      this.cdr.detectChanges();
       return;
     }
 
     this.cargando = true;
+    this.cdr.detectChanges();
 
     this.auth.registrar({
-      nombre: this.nuevoUsuario.nombre.trim(),
-      correo: this.nuevoUsuario.correo.trim(),
-      contrasena: this.nuevoUsuario.password.trim()
+      nombre,
+      correo,
+      contrasena: password
     }).subscribe({
       next: () => {
-        this.auth.login(this.nuevoUsuario.correo.trim(), 'FINAL', this.nuevoUsuario.nombre.trim(), this.nuevoUsuario.password.trim()).subscribe({
-          next: () => {
+        this.auth.login(correo, 'FINAL', nombre, password).pipe(
+          finalize(() => {
             this.cargando = false;
+            this.cdr.detectChanges();
+          })
+        ).subscribe({
+          next: () => {
             this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
           },
           error: () => {
-            this.cargando = false;
             this.router.navigate(['/login']);
           }
         });
@@ -121,6 +138,7 @@ export class RegistroComponent implements AfterViewInit {
         this.cargando = false;
         const fieldError = err?.error?.errors?.[0]?.message;
         this.error = fieldError || err?.error?.message || err?.error?.mensaje || 'Error al registrar el usuario. Verifica los datos.';
+        this.cdr.detectChanges();
       }
     });
   }
