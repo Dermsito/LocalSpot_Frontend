@@ -38,12 +38,11 @@
           id="password"
           [(ngModel)]="nuevoUsuario.password" 
           name="password" 
-          placeholder="••••••••" 
-          required 
+          placeholder="Mínimo 8 caracteres" minlength="8" required 
         />
       </div>
 
-      <button type="submit" class="btn-submit" [disabled]="cargando">
+      <p class="form-error" *ngIf="error" style="color:#c53030;background:#fff5f5;border:1px solid #feb2b2;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin:0;">{{ error }}</p>`n`n      <button type="submit" class="btn-submit" [disabled]="cargando">
         {{ cargando ? 'Registrando...' : 'Registrarse' }}
       </button>
     </form>

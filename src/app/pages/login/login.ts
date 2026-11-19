@@ -106,7 +106,7 @@ export class LoginComponent implements AfterViewInit {
       },
       error: (err) => {
         this.cargando = false;
-        this.error = err?.error?.mensaje || 'Correo o contraseña incorrectos.';
+        this.error = err?.error?.message || err?.error?.mensaje || 'Correo o contraseña incorrectos.';
       }
     });
   }

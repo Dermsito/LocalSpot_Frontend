@@ -86,25 +86,41 @@ export class RegistroComponent implements AfterViewInit {
   }
 
   onRegistro(): void {
-    if (!this.nuevoUsuario.nombre || !this.nuevoUsuario.correo || !this.nuevoUsuario.password) {
+    this.error = '';
+
+    if (!this.nuevoUsuario.nombre.trim() || !this.nuevoUsuario.correo.trim() || !this.nuevoUsuario.password.trim()) {
+      this.error = 'Por favor completa todos los campos.';
+      return;
+    }
+
+    if (this.nuevoUsuario.password.trim().length < 8) {
+      this.error = 'La contraseña debe tener al menos 8 caracteres.';
       return;
     }
 
     this.cargando = true;
-    this.error = '';
 
     this.auth.registrar({
-      nombre: this.nuevoUsuario.nombre,
-      correo: this.nuevoUsuario.correo,
-      contrasena: this.nuevoUsuario.password
+      nombre: this.nuevoUsuario.nombre.trim(),
+      correo: this.nuevoUsuario.correo.trim(),
+      contrasena: this.nuevoUsuario.password.trim()
     }).subscribe({
       next: () => {
-        this.cargando = false;
-        this.router.navigate(['/login']);
+        this.auth.login(this.nuevoUsuario.correo.trim(), 'FINAL', this.nuevoUsuario.nombre.trim(), this.nuevoUsuario.password.trim()).subscribe({
+          next: () => {
+            this.cargando = false;
+            this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+          },
+          error: () => {
+            this.cargando = false;
+            this.router.navigate(['/login']);
+          }
+        });
       },
       error: (err) => {
         this.cargando = false;
-        this.error = err?.error?.mensaje || 'Error al registrar el usuario.';
+        const fieldError = err?.error?.errors?.[0]?.message;
+        this.error = fieldError || err?.error?.message || err?.error?.mensaje || 'Error al registrar el usuario. Verifica los datos.';
       }
     });
   }

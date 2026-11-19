@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -113,15 +113,34 @@ export class PropietarioRegistroComponent implements OnInit {
       return;
     }
 
-    const password = this.nuevoNegocio.contrasena || '12345678';
-    this.authService.login(this.nuevoNegocio.correo, 'PROPIETARIO', this.nuevoNegocio.nombre, password).subscribe({
+    const password = (this.nuevoNegocio.contrasena || '').trim();
+    if (!this.nuevoNegocio.nombre.trim() || !this.nuevoNegocio.correo.trim() || password.length < 8) {
+      this.cargando = false;
+      this.errorMensaje = 'Ingresa tu nombre, correo y una contraseña de al menos 8 caracteres.';
+      return;
+    }
+
+    this.authService.registrar({
+      nombre: this.nuevoNegocio.nombre.trim(),
+      correo: this.nuevoNegocio.correo.trim(),
+      contrasena: password,
+      tipoUsuario: 'PROPIETARIO'
+    }).subscribe({
       next: () => {
-        const usuario = this.authService.getUsuario();
-        this.enviarEstablecimientoBackend(usuario?.id || 0);
+        this.authService.login(this.nuevoNegocio.correo.trim(), 'PROPIETARIO', this.nuevoNegocio.nombre.trim(), password).subscribe({
+          next: () => {
+            const usuario = this.authService.getUsuario();
+            this.enviarEstablecimientoBackend(usuario?.id || 0);
+          },
+          error: (err) => {
+            this.cargando = false;
+            this.errorMensaje = err?.error?.message || 'Cuenta creada, pero falló el inicio de sesión automático.';
+          }
+        });
       },
       error: (err) => {
         this.cargando = false;
-        this.errorMensaje = err?.error?.message || 'No se pudo iniciar sesión o crear la cuenta de propietario.';
+        this.errorMensaje = err?.error?.message || 'No se pudo crear la cuenta de propietario (verifica si el correo ya existe).';
       }
     });
   }
