@@ -1,15 +1,14 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { TOKEN_KEY } from './auth';
 
-/**
- * Adjunta el JWT al header Authorization de cada petición saliente cuando hay sesión.
- * Lee el token directamente de localStorage para evitar dependencias circulares
- * con AuthService (que a su vez usa HttpClient).
- */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.url.includes('/api/auth/')) {
+    return next(req);
+  }
+
   const token = localStorage.getItem(TOKEN_KEY);
 
-  if (!token) {
+  if (!token || token === 'mock-jwt-token') {
     return next(req);
   }
 
