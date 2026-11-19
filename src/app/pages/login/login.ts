@@ -2,7 +2,6 @@ import { Component, AfterViewInit, ElementRef, ViewChild, NgZone, ChangeDetector
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
 import { AuthService, rutaInicialPorRol } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 
@@ -74,18 +73,20 @@ export class LoginComponent implements AfterViewInit {
       this.error = '';
       this.cdr.detectChanges();
 
-      this.auth.loginConGoogle(response.credential).pipe(
-        finalize(() => {
-          this.cargando = false;
-          this.cdr.detectChanges();
-        })
-      ).subscribe({
+      this.auth.loginConGoogle(response.credential).subscribe({
         next: () => {
-          this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+          this.ngZone.run(() => {
+            this.cargando = false;
+            this.cdr.detectChanges();
+            this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+          });
         },
         error: (err: any) => {
-          this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo iniciar sesión con Google.';
-          this.cdr.detectChanges();
+          this.ngZone.run(() => {
+            this.cargando = false;
+            this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo iniciar sesión con Google.';
+            this.cdr.detectChanges();
+          });
         }
       });
     });
@@ -106,26 +107,28 @@ export class LoginComponent implements AfterViewInit {
     this.cargando = true;
     this.cdr.detectChanges();
 
-    this.auth.login(correo, 'FINAL', undefined, password).pipe(
-      finalize(() => {
-        this.cargando = false;
-        this.cdr.detectChanges();
-      })
-    ).subscribe({
+    this.auth.login(correo, 'FINAL', undefined, password).subscribe({
       next: () => {
-        this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+        this.ngZone.run(() => {
+          this.cargando = false;
+          this.cdr.detectChanges();
+          this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+        });
       },
       error: (err) => {
-        if (err?.name === 'TimeoutError' || err?.status === 0) {
-          this.error = 'El servidor está iniciando, intenta de nuevo en unos segundos.';
-        } else if (err?.status === 401) {
-          this.error = 'Correo o contraseña incorrectos. Verifica tus datos.';
-        } else if (err?.status === 403) {
-          this.error = err?.error?.message || 'Tu cuenta aún no está verificada o no tiene permiso.';
-        } else {
-          this.error = err?.error?.message || err?.error?.mensaje || 'Correo o contraseña incorrectos.';
-        }
-        this.cdr.detectChanges();
+        this.ngZone.run(() => {
+          this.cargando = false;
+          if (err?.name === 'TimeoutError' || err?.status === 0) {
+            this.error = 'El servidor está iniciando, intenta de nuevo en unos segundos.';
+          } else if (err?.status === 401) {
+            this.error = 'Correo o contraseña incorrectos. Verifica tus datos.';
+          } else if (err?.status === 403) {
+            this.error = err?.error?.message || 'Tu cuenta aún no está verificada o no tiene permiso.';
+          } else {
+            this.error = err?.error?.message || err?.error?.mensaje || 'Correo o contraseña incorrectos.';
+          }
+          this.cdr.detectChanges();
+        });
       }
     });
   }

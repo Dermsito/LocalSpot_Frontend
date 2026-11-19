@@ -1,8 +1,7 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
 import { AuthService } from '../../../services/auth';
 
 @Component({
@@ -24,6 +23,7 @@ export class PropietarioLoginComponent {
   constructor(
     private router: Router,
     private auth: AuthService,
+    private ngZone: NgZone,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -42,22 +42,24 @@ export class PropietarioLoginComponent {
     this.cargando = true;
     this.cdr.detectChanges();
 
-    this.auth.login(correo, 'PROPIETARIO', undefined, password).pipe(
-      finalize(() => {
-        this.cargando = false;
-        this.cdr.detectChanges();
-      })
-    ).subscribe({
+    this.auth.login(correo, 'PROPIETARIO', undefined, password).subscribe({
       next: () => {
-        this.router.navigate(['/propietario/panel']);
+        this.ngZone.run(() => {
+          this.cargando = false;
+          this.cdr.detectChanges();
+          this.router.navigate(['/propietario/panel']);
+        });
       },
       error: (err) => {
-        if (err?.name === 'TimeoutError' || err?.status === 0) {
-          this.error = 'El servidor está iniciando, intenta de nuevo en unos segundos.';
-        } else {
-          this.error = err?.error?.message || err?.error?.mensaje || 'Correo o contraseña incorrectos.';
-        }
-        this.cdr.detectChanges();
+        this.ngZone.run(() => {
+          this.cargando = false;
+          if (err?.name === 'TimeoutError' || err?.status === 0) {
+            this.error = 'El servidor está iniciando, intenta de nuevo en unos segundos.';
+          } else {
+            this.error = err?.error?.message || err?.error?.mensaje || 'Correo o contraseña incorrectos.';
+          }
+          this.cdr.detectChanges();
+        });
       }
     });
   }

@@ -2,7 +2,6 @@ import { Component, AfterViewInit, ElementRef, ViewChild, NgZone, ChangeDetector
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
 import { AuthService, rutaInicialPorRol } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 
@@ -75,18 +74,20 @@ export class RegistroComponent implements AfterViewInit {
       this.error = '';
       this.cdr.detectChanges();
 
-      this.auth.loginConGoogle(response.credential).pipe(
-        finalize(() => {
-          this.cargando = false;
-          this.cdr.detectChanges();
-        })
-      ).subscribe({
+      this.auth.loginConGoogle(response.credential).subscribe({
         next: () => {
-          this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+          this.ngZone.run(() => {
+            this.cargando = false;
+            this.cdr.detectChanges();
+            this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+          });
         },
         error: (err: any) => {
-          this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo registrar con Google.';
-          this.cdr.detectChanges();
+          this.ngZone.run(() => {
+            this.cargando = false;
+            this.error = err?.error?.message || err?.error?.mensaje || 'No se pudo registrar con Google.';
+            this.cdr.detectChanges();
+          });
         }
       });
     });
@@ -120,25 +121,36 @@ export class RegistroComponent implements AfterViewInit {
       contrasena: password
     }).subscribe({
       next: () => {
-        this.auth.login(correo, 'FINAL', nombre, password).pipe(
-          finalize(() => {
-            this.cargando = false;
-            this.cdr.detectChanges();
-          })
-        ).subscribe({
+        this.auth.login(correo, 'FINAL', nombre, password).subscribe({
           next: () => {
-            this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+            this.ngZone.run(() => {
+              this.cargando = false;
+              this.cdr.detectChanges();
+              this.router.navigateByUrl(rutaInicialPorRol(this.auth.getRol()));
+            });
           },
           error: () => {
-            this.router.navigate(['/login']);
+            this.ngZone.run(() => {
+              this.cargando = false;
+              this.cdr.detectChanges();
+              this.router.navigate(['/login']);
+            });
           }
         });
       },
       error: (err) => {
-        this.cargando = false;
-        const fieldError = err?.error?.errors?.[0]?.message;
-        this.error = fieldError || err?.error?.message || err?.error?.mensaje || 'Error al registrar el usuario. Verifica los datos.';
-        this.cdr.detectChanges();
+        this.ngZone.run(() => {
+          this.cargando = false;
+          if (err?.status === 409) {
+            this.error = err?.error?.message || `El correo ${correo} ya se encuentra registrado.`;
+          } else if (err?.name === 'TimeoutError' || err?.status === 0) {
+            this.error = 'El servidor está iniciando, intenta de nuevo en unos segundos.';
+          } else {
+            const fieldError = err?.error?.errors?.[0]?.message;
+            this.error = fieldError || err?.error?.message || err?.error?.mensaje || 'Error al registrar el usuario. Verifica los datos.';
+          }
+          this.cdr.detectChanges();
+        });
       }
     });
   }
